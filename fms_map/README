@@ -1,0 +1,4 @@
+mk_tree.C : FULL_MAP --> tree.root
+draw.C : tree.root --> maps.root
+print.C : maps.root --> maps.pdf
+mk_table.C : tree.root --> table_{large,small}.txt
