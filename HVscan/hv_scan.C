@@ -50,16 +50,16 @@ void hv_scan()
   Int_t smallhv[NUM]; // software value {0x00-0xFF} (maps to voltage value)
   runnum[0]=16021065; largehv[0]=1.10; smallhv[0]=0xA0;
   runnum[1]=16021066; largehv[1]=1.15; smallhv[1]=0xA8;
-  runnum[2]=16021067; largehv[2]=1.20; smallhv[2]=0xB0;
+  runnum[2]=16021067; largehv[2]=1.20; smallhv[2]=0xB0; //
   runnum[3]=16021068; largehv[3]=1.25; smallhv[3]=0xB8;
   runnum[4]=16021069; largehv[4]=1.30; smallhv[4]=0xC0;
-  runnum[5]=16021070; largehv[5]=1.35; smallhv[5]=0xC8;
+  runnum[5]=16021070; largehv[5]=1.35; smallhv[5]=0xC8; //
   runnum[6]=16021071; largehv[6]=1.40; smallhv[6]=0xD0;
   runnum[7]=16021072; largehv[7]=1.45; smallhv[7]=0xD8;
-  runnum[8]=16021073; largehv[8]=1.50; smallhv[8]=0xE0;
+  runnum[8]=16021073; largehv[8]=1.50; smallhv[8]=0xE0; //
   runnum[9]=16021074; largehv[9]=1.55; smallhv[9]=0xE8;
   runnum[10]=16021075; largehv[10]=1.60; smallhv[10]=0xF0;
-  runnum[11]=16021076; largehv[11]=1.65; smallhv[11]=0xF8;
+  runnum[11]=16021076; largehv[11]=1.65; smallhv[11]=0xF8; //
   runnum[12]=16021077; largehv[12]=1.70; smallhv[12]=0xFF;
   */
   /*
@@ -70,12 +70,37 @@ void hv_scan()
   Int_t smallhv[NUM]; // software value {0x00-0xFF} (maps to voltage value)
   runnum[0]=16037091; largehv[0]=1.30; smallhv[0]=0xA0;
   */
+  /*
   // MAGNET ON
   const Int_t NUM = 1;
   Int_t runnum[NUM];
   Double_t largehv[NUM]; // in kV
   Int_t smallhv[NUM]; // software value {0x00-0xFF} (maps to voltage value)
-  runnum[0]=16038073; largehv[0]=1.30; smallhv[0]=0xA0;
+  runnum[0]=16042057; largehv[0]=1.30; smallhv[0]=0xA0;
+  */
+  ///*
+  // MAGNET ON
+  const Int_t NUM = 16;
+  Int_t runnum[NUM];
+  Double_t largehv[NUM]; // in kV
+  Int_t smallhv[NUM]; // software value {0x00-0xFF} (maps to voltage value)
+  runnum[0]=16041163; largehv[0]=1.750; smallhv[0]=0xF0;
+  runnum[1]=16041164; largehv[1]=1.700; smallhv[1]=0xFF;
+  runnum[2]=16041165; largehv[2]=1.650; smallhv[2]=0xF8;
+  runnum[3]=16041166; largehv[3]=1.600; smallhv[3]=0xF0;
+  runnum[4]=16041167; largehv[4]=1.550; smallhv[4]=0xE8;
+  runnum[5]=16041168; largehv[5]=1.500; smallhv[5]=0xE0;
+  runnum[6]=16041169; largehv[6]=1.450; smallhv[6]=0xD8;
+  runnum[7]=16041170; largehv[7]=1.400; smallhv[7]=0xD0;
+  runnum[8]=16041171; largehv[8]=1.350; smallhv[8]=0xC8;
+  runnum[9]=16041172; largehv[9]=1.300; smallhv[9]=0xC0;
+  runnum[10]=16041173; largehv[10]=1.250; smallhv[10]=0xB8;
+  runnum[11]=16041174; largehv[11]=1.200; smallhv[11]=0xB0;
+  runnum[12]=16041175; largehv[12]=1.150; smallhv[12]=0xA8;
+  runnum[13]=16041176; largehv[13]=1.100; smallhv[13]=0xA0;
+  runnum[14]=16041177; largehv[14]=1.050; smallhv[14]=0x98;
+  runnum[15]=16041178; largehv[15]=1.000; smallhv[15]=0x90;
+  //*/
 
   // open adc trees
   TFile * adcfile[NUM];
@@ -149,11 +174,22 @@ void hv_scan()
   char gaingr_fit_n[4][34][17][128];
   char gaingr_n[4][34][17][64];
   Int_t gaingr_i[4][34][17];
-  Double_t hv,hv_low,hv_high;
+  Double_t hv,hv_low,hv_high,hv_low_small,hv_low_large,hv_high_small,hv_high_large;
   Int_t ent = geotr->GetEntries();
   char printname[64];
   Double_t distmaxloc,distrms;
   Int_t distmaxbin;
+  hv_low_small = 3000;
+  hv_low_large = 3000;
+  hv_high_small = 0;
+  hv_high_large = 0;
+  for(Int_t i=0; i<NUM; i++)
+  {
+    hv_low_small = (smallhv[i] < hv_low_small) ? smallhv[i]:hv_low_small;
+    hv_low_large = (largehv[i] < hv_low_large) ? largehv[i]:hv_low_large;
+    hv_high_small = (smallhv[i] > hv_high_small) ? smallhv[i]:hv_high_small;
+    hv_high_large = (largehv[i] > hv_high_large) ? largehv[i]:hv_high_large;
+  };
   for(Int_t i=0; i<ent; i++)
   {
     // -- DEBUG --
@@ -176,8 +212,8 @@ void hv_scan()
     gaingr[nstb-1][row][col]->SetMarkerStyle(kFullCircle);
     sprintf(gaingr_fit_n[nstb-1][row][col],"gaingr_fit_n%d_ch%d_r%d_c%d",
       nstb,col+row*factor+1,row,col);
-    if(nstb==1||nstb==2) { hv_low=largehv[0]-0.1; hv_high=largehv[NUM-1]+0.1; }
-    else {hv_low=smallhv[0]-10; hv_high=smallhv[NUM-1]+10; };
+    if(nstb==1||nstb==2) { hv_low=hv_low_large-0.1; hv_high=hv_high_large+0.1; }
+    else {hv_low=hv_low_small-10; hv_high=hv_high_small+10; };
     
     // power law fit
     gaingr_fit[nstb-1][row][col] = new TF1(gaingr_fit_n[nstb-1][row][col],"[0]*x^[1]",hv_low,hv_high);

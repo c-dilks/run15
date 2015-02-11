@@ -2,7 +2,7 @@
 
 void draw_LED_resolutions(Int_t day=0)
 {
-  const Float_t RES_MAX = 0.3;
+  const Float_t RES_MAX = 1;
   char filename[32];
   if(day!=0) sprintf(filename,"hvtr_%d.root",day);
   else strcpy(filename,"hvtr.root");
@@ -10,13 +10,15 @@ void draw_LED_resolutions(Int_t day=0)
   char extra_cuts[128];
 
   // voltage set points
-  Int_t NUM,Shv_lb,Shv_ub;
+  Int_t NUM,NUM_large,NUM_small,Shv_lb,Shv_ub;
   Double_t Lhv_lb,Lhv_ub;
   Double_t largehv[30];
   Int_t smallhv[30];
   if(day==353)
   {
     NUM=1;
+    NUM_large = NUM;
+    NUM_small = NUM;
     largehv[0]=1.2; smallhv[0]=0xA0; // not necessarily correct, only NSTB 2&4 were on
     Lhv_lb=largehv[0]-0.050;
     Lhv_ub=largehv[NUM-1]+0.050;
@@ -27,6 +29,8 @@ void draw_LED_resolutions(Int_t day=0)
   else if(day==17)
   {
     NUM=5;
+    NUM_large = NUM;
+    NUM_small = NUM;
     largehv[0]=1.1; smallhv[0]=0x90;
     largehv[1]=1.2; smallhv[1]=0xA0;
     largehv[2]=1.3; smallhv[2]=0xB0;
@@ -41,6 +45,8 @@ void draw_LED_resolutions(Int_t day=0)
   else if(day==20)
   {
     NUM=13;
+    NUM_large = NUM;
+    NUM_small = NUM;
     largehv[0]=1.10; smallhv[0]=0xA0;
     largehv[1]=1.15; smallhv[1]=0xA8;
     largehv[2]=1.20; smallhv[2]=0xB0;
@@ -63,6 +69,8 @@ void draw_LED_resolutions(Int_t day=0)
   else if(day==21)
   {
     NUM=13;
+    NUM_large = NUM;
+    NUM_small = NUM;
     largehv[0]=1.10; smallhv[0]=0xA0;
     largehv[1]=1.15; smallhv[1]=0xA8;
     largehv[2]=1.20; smallhv[2]=0xB0;
@@ -82,9 +90,11 @@ void draw_LED_resolutions(Int_t day=0)
     Shv_ub=smallhv[NUM-1]+0x04;
     strcpy(extra_cuts,"gaus_sigma<gaus_mean && gaus_mean>10 && gaus_mean<3800");
   }
-  else if(day==37 || day==38 || day==0)
+  else if(day==37 || day==38)
   {
     NUM=1;
+    NUM_large = NUM;
+    NUM_small = NUM;
     largehv[0]=1.30; smallhv[0]=0xA0;
     strcpy(extra_cuts,"gaus_sigma<gaus_mean && gaus_mean>10 && gaus_mean<3800");
     Lhv_lb=largehv[0]-0.025;
@@ -92,9 +102,38 @@ void draw_LED_resolutions(Int_t day=0)
     Shv_lb=smallhv[0]-0x04;
     Shv_ub=smallhv[NUM-1]+0x04;
   }
+  else if(day==41 || day==0)
+  {
+    NUM=16;
+    NUM_large = NUM;
+    NUM_small = 15;
+    largehv[0]=1.750; smallhv[0]=0xF0;
+    largehv[1]=1.700; smallhv[1]=0xFF;
+    largehv[2]=1.650; smallhv[2]=0xF8;
+    largehv[3]=1.600; smallhv[3]=0xF0;
+    largehv[4]=1.550; smallhv[4]=0xE8;
+    largehv[5]=1.500; smallhv[5]=0xE0;
+    largehv[6]=1.450; smallhv[6]=0xD8;
+    largehv[7]=1.400; smallhv[7]=0xD0;
+    largehv[8]=1.350; smallhv[8]=0xC8;
+    largehv[9]=1.300; smallhv[9]=0xC0;
+    largehv[10]=1.250; smallhv[10]=0xB8;
+    largehv[11]=1.200; smallhv[11]=0xB0;
+    largehv[12]=1.150; smallhv[12]=0xA8;
+    largehv[13]=1.100; smallhv[13]=0xA0;
+    largehv[14]=1.050; smallhv[14]=0x98;
+    largehv[15]=1.000; smallhv[15]=0x90;
+    Lhv_lb=1.000-0.025;
+    Lhv_ub=1.750+0.025;
+    Shv_lb=0x90-0x04;
+    Shv_ub=0xFF+0x04;
+    strcpy(extra_cuts,"gaus_sigma<gaus_mean && gaus_mean>10 && gaus_mean<3800");
+  };
 
-  const Int_t NUMC = NUM;
-
+  const Int_t NUMC_large = NUM_large;
+  const Int_t NUMC_small = NUM_small;
+  Int_t NUMC_tmp = (NUMC_large > NUMC_small) ? NUMC_large:NUMC_small;
+  const Int_t NUMC = NUMC_tmp;
 
 
 
@@ -114,42 +153,42 @@ void draw_LED_resolutions(Int_t day=0)
 
   TH2D * large_all_adcmean = new TH2D("large_all_adcmean",
     "LED ADC mean (#mu) vs. HV setpoint -- all large cells;HV setpoint (kV);ADC #mu",
-    NUM,Lhv_lb,Lhv_ub,200,0,4096);
+    NUM_large,Lhv_lb,Lhv_ub,200,0,4096);
   TH2D * large_reg_adcmean = new TH2D("large_reg_adcmean",
     "LED ADC mean (#mu) vs. HV setpoint -- large cells (without edges);HV setpoint (kV);ADC #mu",
-    NUM,Lhv_lb,Lhv_ub,200,0,4096);
+    NUM_large,Lhv_lb,Lhv_ub,200,0,4096);
   TH2D * russian_adcmean = new TH2D("russian_adcmean",
     "LED ADC mean (#mu) vs. HV setpoint -- russian cells;HV setpoint [0x00-0xFF];ADC #mu",
-    NUM,Shv_lb,Shv_ub,200,0,4096);
+    NUM_small,Shv_lb,Shv_ub,200,0,4096);
   TH2D * yale_adcmean = new TH2D("yale_adcmean",
     "LED ADC mean (#mu) vs. HV setpoint -- yale cells;HV setpoint [0x00-0xFF];ADC #mu",
-    NUM,Shv_lb,Shv_ub,200,0,4096);
+    NUM_small,Shv_lb,Shv_ub,200,0,4096);
 
   TH2D * large_all_adcsigma = new TH2D("large_all_adcsigma",
     "LED ADC width (#sigma) vs. HV setpoint -- all large cells;HV setpoint (kV);ADC #sigma",
-    NUM,Lhv_lb,Lhv_ub,2000,0,4096);
+    NUM_large,Lhv_lb,Lhv_ub,2000,0,4096);
   TH2D * large_reg_adcsigma = new TH2D("large_reg_adcsigma",
     "LED ADC width (#sigma) vs. HV setpoint -- large cells (without edges);HV setpoint (kV);ADC #sigma",
-    NUM,Lhv_lb,Lhv_ub,2000,0,4096);
+    NUM_large,Lhv_lb,Lhv_ub,2000,0,4096);
   TH2D * russian_adcsigma = new TH2D("russian_adcsigma",
     "LED ADC width (#sigma) vs. HV setpoint -- russian cells;HV setpoint [0x00-0xFF];ADC #sigma",
-    NUM,Shv_lb,Shv_ub,2000,0,4096);
+    NUM_small,Shv_lb,Shv_ub,2000,0,4096);
   TH2D * yale_adcsigma = new TH2D("yale_adcsigma",
     "LED ADC width (#sigma) vs. HV setpoint -- yale cells;HV setpoint [0x00-0xFF];ADC #sigma",
-    NUM,Shv_lb,Shv_ub,2000,0,4096);
+    NUM_small,Shv_lb,Shv_ub,2000,0,4096);
 
   TH2D * large_all_res = new TH2D("large_all_res",
     "LED resolution vs. HV setpoint -- all large cells;HV setpoint (kV);ADC #sigma/#mu",
-    NUM,Lhv_lb,Lhv_ub,100,0,1);
+    NUM_large,Lhv_lb,Lhv_ub,100,0,1);
   TH2D * large_reg_res = new TH2D("large_reg_res",
     "LED resolution vs. HV setpoint -- large cells (without edges);HV setpoint (kV);ADC #sigma/#mu",
-    NUM,Lhv_lb,Lhv_ub,100,0,1);
+    NUM_large,Lhv_lb,Lhv_ub,100,0,1);
   TH2D * russian_res = new TH2D("russian_res",
     "LED resolution vs. HV setpoint -- russian cells;HV setpoint [0x00-0xFF];ADC #sigma/#mu",
-    NUM,Shv_lb,Shv_ub,100,0,1);
+    NUM_small,Shv_lb,Shv_ub,100,0,1);
   TH2D * yale_res = new TH2D("yale_res",
     "LED resolution vs. HV setpoint -- yale cells;HV setpoint [0x00-0xFF];ADC #sigma/#mu",
-    NUM,Shv_lb,Shv_ub,100,0,1);
+    NUM_small,Shv_lb,Shv_ub,100,0,1);
 
 
   TH2F * large_geom_res[NUMC];
@@ -188,7 +227,7 @@ void draw_LED_resolutions(Int_t day=0)
   for(Int_t n=0; n<NUMC; n++)
   {
     sprintf(large_geomcut[n],"dist_sigma/dist_mean*((nstb==1||nstb==2) && abs(Lhv-%f)<0.001 && %s)",largehv[n],extra_cuts);
-    sprintf(small_geomcut[n],"dist_sigma/dist_mean*((nstb==3||nstb==4) && abs(Shv-%d)<0.001 && %s)",smallhv[n],extra_cuts);
+    sprintf(small_geomcut[n],"dist_sigma/dist_mean*((nstb==3||nstb==4) && Shv==%d && %s)",smallhv[n],extra_cuts);
   };
 
 

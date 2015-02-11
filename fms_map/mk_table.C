@@ -1,7 +1,7 @@
 void mk_table()
 {
   TFile * infile = new TFile("tree.root","READ");
-  TTree * tr = (TTree*) infile->Get("tr");
+  TTree * tr = (TTree*) infile->Get("geotr");
 
   gROOT->ProcessLine(".! touch table_large.txt; rm table_large.txt");
   gROOT->ProcessLine(".! touch table_small.txt; rm table_small.txt");

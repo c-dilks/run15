@@ -1,7 +1,7 @@
 void draw()
 {
   TFile * infile = new TFile("tree.root","READ");
-  TTree * tr = (TTree*) infile->Get("tr");
+  TTree * tr = (TTree*) infile->Get("geotr");
   
   Int_t nstb,row,col;
   char cell_type[32];

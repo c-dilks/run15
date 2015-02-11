@@ -126,6 +126,6 @@ void mk_tree(const char * filename="FULL_MAP")
     };
     outtr->Fill();
   };
-  outtr->Write("tr");
+  outtr->Write("geotr");
   printf("tree.root created\n");
 };
