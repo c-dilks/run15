@@ -27,6 +27,12 @@ analyses a set of runs with different HV setpoints
     * FMS display canvases for the fit parameters and chisq/ndf for gain curves
     * distributions of `alpha` for each `cell_type`
 
+* `make_calibration_files.C`
+  * builds `large_gaincurve_par.txt` and `small_gaincurve_par.txt`, which are files
+    used for Thomas Burton's fmsvoltages software; they are library files with columns
+    `[nstb] [row] [col] [scale] [alpha]`, where `scale` and `alpha` are gain curve 
+    fit parameters
+
 * `draw_LED_resolutions.C`
   * reads `hvtr.root`
   * in the chain of if statements, you must provide a list of large HV and small

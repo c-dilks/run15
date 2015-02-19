@@ -26,7 +26,7 @@ void draw_gain_fit_params(const char * filename="hvtr.root")
   //scale_min = hvtr->GetMinimum("scale");
   scale_min = 1e-10;
   alpha_max_large = 20;
-  alpha_max_small = 8;
+  alpha_max_small = 13;
   alpha_min = 0;
   large_alpha->SetMaximum(alpha_max_large);
   large_alpha->SetMinimum(alpha_min);
@@ -41,13 +41,13 @@ void draw_gain_fit_params(const char * filename="hvtr.root")
   large_chisq->SetMinimum(0);
   small_chisq->SetMinimum(0);
   TH1F * alpha_dist_large_regular = new TH1F("alpha_dist_large_regular",
-    "#alpha distribution -- large regular cells",100,alpha_min,alpha_max_large);
+    "#alpha distribution -- large regular cells",200,alpha_min,alpha_max_large);
   TH1F * alpha_dist_large_edge = new TH1F("alpha_dist_large_edge",
-    "#alpha distribution -- large edge cells",100,alpha_min,alpha_max_large);
+    "#alpha distribution -- large edge cells",200,alpha_min,alpha_max_large);
   TH1F * alpha_dist_small_russian = new TH1F("alpha_dist_small_russian",
-    "#alpha distribution -- small russian cells",100,alpha_min,alpha_max_small);
+    "#alpha distribution -- small russian cells",200,alpha_min,alpha_max_small);
   TH1F * alpha_dist_small_yale = new TH1F("alpha_dist_small_yale",
-    "#alpha distribution -- small yale cells",100,alpha_min,alpha_max_small);
+    "#alpha distribution -- small yale cells",200,alpha_min,alpha_max_small);
   hvtr->Project("largetxt","-5.8*(row+0.5-17):5.8*2*(nstb-1.5)*(col+.5)","(col+row*17+1)*(nstb==1||nstb==2)");
   hvtr->Project("smalltxt","-3.8*(row-11.5):3.8*2*(nstb-3.5)*(col+.5)","(col+row*12+1)*(nstb==3||nstb==4)");
   largetxt->SetMarkerSize(0.5);

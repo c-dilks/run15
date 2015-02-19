@@ -2,7 +2,7 @@
 
 void draw_LED_resolutions(Int_t day=0)
 {
-  const Float_t RES_MAX = 1;
+  const Float_t RES_MAX = 0.2; // max resolution shown in plot
   char filename[32];
   if(day!=0) sprintf(filename,"hvtr_%d.root",day);
   else strcpy(filename,"hvtr.root");
@@ -45,7 +45,7 @@ void draw_LED_resolutions(Int_t day=0)
   else if(day==20)
   {
     NUM=13;
-    NUM_large = NUM;
+    NUM_large = 11;
     NUM_small = NUM;
     largehv[0]=1.10; smallhv[0]=0xA0;
     largehv[1]=1.15; smallhv[1]=0xA8;
