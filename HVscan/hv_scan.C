@@ -58,7 +58,7 @@ void hv_scan()
   runnum[11]=16020015; largehv[11]=1.60; smallrdac[11]=0xF8; // DISREGARD NSTB==4 // (lost communication)
   runnum[12]=16020016; largehv[12]=1.60; smallrdac[12]=0xFF; // DISREGARD NSTB==4 // (lost communication)
   */
-  ///*
+  /*
   // MAGNET ON
   const Int_t NUM = 13;
   Int_t runnum[NUM];
@@ -77,7 +77,7 @@ void hv_scan()
   runnum[10]=16021075; largehv[10]=1.60; smallrdac[10]=0xF0;
   runnum[11]=16021076; largehv[11]=1.65; smallrdac[11]=0xF8; //
   runnum[12]=16021077; largehv[12]=1.70; smallrdac[12]=0xFF;
-  //*/
+  */
   /*
   // MAGNET OFF
   const Int_t NUM = 1;
@@ -117,6 +117,14 @@ void hv_scan()
   runnum[14]=16041177; largehv[14]=1.050; smallrdac[14]=0x98;
   runnum[15]=16041178; largehv[15]=1.000; smallrdac[15]=0x90;
   */
+  ///*
+  // MAGNET ON
+  const Int_t NUM = 1;
+  Int_t runnum[NUM];
+  Double_t largehv[NUM]; // in kV
+  Int_t smallrdac[NUM]; // software value {0x00-0xFF} (maps to voltage value)
+  runnum[0]=16051096; largehv[0]=1.40; smallrdac[0]=0xA0;
+  //*/
   
   // ====================================================================
 
@@ -357,7 +365,7 @@ void hv_scan()
       fitcanv->Clear();
       fitcanv->cd();
       Lhv=largehv[r];
-      Shv=smallhv[r];
+      Shv=smallrdac[r];
       if(adcdist[nstb-1][row][col][r]->GetEntries())
       {
         //adcdist[nstb-1][row][col][r]->Fit("gaus","Q","",0,4096);

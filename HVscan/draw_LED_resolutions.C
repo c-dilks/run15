@@ -102,7 +102,7 @@ void draw_LED_resolutions(Int_t day=0)
     Shv_lb=smallhv[0]-0x04;
     Shv_ub=smallhv[NUM-1]+0x04;
   }
-  else if(day==41 || day==0)
+  else if(day==41)
   {
     NUM=16;
     NUM_large = NUM;
@@ -128,7 +128,19 @@ void draw_LED_resolutions(Int_t day=0)
     Shv_lb=0x90-0x04;
     Shv_ub=0xFF+0x04;
     strcpy(extra_cuts,"gaus_sigma<gaus_mean && gaus_mean>10 && gaus_mean<3800");
-  };
+  }
+  else if(day==49 || day==0)
+  {
+    NUM=1;
+    NUM_large = NUM;
+    NUM_small = NUM;
+    largehv[0]=1.40; smallhv[0]=0xA0;
+    strcpy(extra_cuts,"gaus_sigma<gaus_mean && gaus_mean>10 && gaus_mean<3800");
+    Lhv_lb=largehv[0]-0.025;
+    Lhv_ub=largehv[NUM-1]+0.025;
+    Shv_lb=smallhv[0]-0x04;
+    Shv_ub=smallhv[NUM-1]+0x04;
+  }
 
   const Int_t NUMC_large = NUM_large;
   const Int_t NUMC_small = NUM_small;

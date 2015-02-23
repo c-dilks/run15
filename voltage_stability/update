@@ -1,0 +1,21 @@
+#!/bin/bash
+
+# obtain new files
+#scp operator@daqman.starp.bnl.gov:/home/operator/fmshv/hvlog_run15/history_* ./
+
+if [ $# -eq 2 ]; then
+  month=$1
+  day=$2
+elif [ $# -eq 0 ]; then
+  month=$(date +%-m)
+  day=$(date +%-d)
+else
+  echo "Usage: $0 [month] [day]"
+  exit
+fi
+
+
+> master
+cat history_*${month}.${day} >> master
+
+root -b -q 'mk_tree.C("master",'${month}','${day}',0)'
