@@ -2,7 +2,7 @@
 
 void draw_LED_resolutions(Int_t day=0)
 {
-  const Float_t RES_MAX = 0.2; // max resolution shown in plot
+  const Float_t RES_MAX = 0.3; // max resolution shown in plot
   char filename[32];
   if(day!=0) sprintf(filename,"hvtr_%d.root",day);
   else strcpy(filename,"hvtr.root");
@@ -156,8 +156,8 @@ void draw_LED_resolutions(Int_t day=0)
 
   TH1D * large_all_chisq = new TH1D("large_all_chisq",
     "#chi^{2}/NDF distribution -- all large cells",100,0,5);
-  TH1D * large_reg_chisq = new TH1D("large_reg_chisq",
-    "#chi^{2}/NDF distribution -- all large cells (without edges)",100,0,5);
+  TH1D * large_psu_chisq = new TH1D("large_psu_chisq",
+    "#chi^{2}/NDF distribution -- large cells with psu bases",100,0,5);
   TH1D * russian_chisq = new TH1D("russian_chisq",
     "#chi^{2}/NDF distribution -- russian cells",100,0,5);
   TH1D * yale_chisq = new TH1D("yale_chisq",
@@ -166,8 +166,8 @@ void draw_LED_resolutions(Int_t day=0)
   TH2D * large_all_adcmean = new TH2D("large_all_adcmean",
     "LED ADC mean (#mu) vs. HV setpoint -- all large cells;HV setpoint (kV);ADC #mu",
     NUM_large,Lhv_lb,Lhv_ub,200,0,4096);
-  TH2D * large_reg_adcmean = new TH2D("large_reg_adcmean",
-    "LED ADC mean (#mu) vs. HV setpoint -- large cells (without edges);HV setpoint (kV);ADC #mu",
+  TH2D * large_psu_adcmean = new TH2D("large_psu_adcmean",
+    "LED ADC mean (#mu) vs. HV setpoint -- large cells with psu bases;HV setpoint (kV);ADC #mu",
     NUM_large,Lhv_lb,Lhv_ub,200,0,4096);
   TH2D * russian_adcmean = new TH2D("russian_adcmean",
     "LED ADC mean (#mu) vs. HV setpoint -- russian cells;HV setpoint [0x00-0xFF];ADC #mu",
@@ -179,8 +179,8 @@ void draw_LED_resolutions(Int_t day=0)
   TH2D * large_all_adcsigma = new TH2D("large_all_adcsigma",
     "LED ADC width (#sigma) vs. HV setpoint -- all large cells;HV setpoint (kV);ADC #sigma",
     NUM_large,Lhv_lb,Lhv_ub,2000,0,4096);
-  TH2D * large_reg_adcsigma = new TH2D("large_reg_adcsigma",
-    "LED ADC width (#sigma) vs. HV setpoint -- large cells (without edges);HV setpoint (kV);ADC #sigma",
+  TH2D * large_psu_adcsigma = new TH2D("large_psu_adcsigma",
+    "LED ADC width (#sigma) vs. HV setpoint -- large cells with psu bases;HV setpoint (kV);ADC #sigma",
     NUM_large,Lhv_lb,Lhv_ub,2000,0,4096);
   TH2D * russian_adcsigma = new TH2D("russian_adcsigma",
     "LED ADC width (#sigma) vs. HV setpoint -- russian cells;HV setpoint [0x00-0xFF];ADC #sigma",
@@ -192,8 +192,8 @@ void draw_LED_resolutions(Int_t day=0)
   TH2D * large_all_res = new TH2D("large_all_res",
     "LED resolution vs. HV setpoint -- all large cells;HV setpoint (kV);ADC #sigma/#mu",
     NUM_large,Lhv_lb,Lhv_ub,100,0,1);
-  TH2D * large_reg_res = new TH2D("large_reg_res",
-    "LED resolution vs. HV setpoint -- large cells (without edges);HV setpoint (kV);ADC #sigma/#mu",
+  TH2D * large_psu_res = new TH2D("large_psu_res",
+    "LED resolution vs. HV setpoint -- large cells with psu bases;HV setpoint (kV);ADC #sigma/#mu",
     NUM_large,Lhv_lb,Lhv_ub,100,0,1);
   TH2D * russian_res = new TH2D("russian_res",
     "LED resolution vs. HV setpoint -- russian cells;HV setpoint [0x00-0xFF];ADC #sigma/#mu",
@@ -225,12 +225,12 @@ void draw_LED_resolutions(Int_t day=0)
 
   
   // cuts
-  char large_all_cut[256];
-  char large_reg_cut[256];
+  char large_all_cut[1024];
+  char large_psu_cut[256];
   char russian_cut[256];
   char yale_cut[256];
-  sprintf(large_all_cut,"(cell_type==\"large_regular\" || cell_type==\"large_edge\") && %s",extra_cuts);
-  sprintf(large_reg_cut,"cell_type==\"large_regular\" && %s",extra_cuts);
+  sprintf(large_all_cut,"(cell_type==\"large_psu\" || cell_type==\"large_fermi\" || cell_type==\"large_resistive\") && %s",extra_cuts);
+  sprintf(large_psu_cut,"cell_type==\"large_psu\" && %s",extra_cuts);
   sprintf(russian_cut,"cell_type==\"small_russian\" && %s",extra_cuts);
   sprintf(yale_cut,"cell_type==\"small_yale\" && %s",extra_cuts);
 
@@ -245,24 +245,24 @@ void draw_LED_resolutions(Int_t day=0)
 
   // projections
   tr->Project("large_all_chisq","gaus_chisq/gaus_ndf",large_all_cut);
-  tr->Project("large_reg_chisq","gaus_chisq/gaus_ndf",large_reg_cut);
+  tr->Project("large_psu_chisq","gaus_chisq/gaus_ndf",large_psu_cut);
   tr->Project("russian_chisq","gaus_chisq/gaus_ndf",russian_cut);
   tr->Project("yale_chisq","gaus_chisq/gaus_ndf",yale_cut);
 
   // USE GAUSSIAN SIGMA/MEAN
   /*
   tr->Project("large_all_adcmean","gaus_mean:Lhv",large_all_cut);
-  tr->Project("large_reg_adcmean","gaus_mean:Lhv",large_reg_cut);
+  tr->Project("large_psu_adcmean","gaus_mean:Lhv",large_psu_cut);
   tr->Project("russian_adcmean","gaus_mean:Shv",russian_cut);
   tr->Project("yale_adcmean","gaus_mean:Shv",yale_cut);
 
   tr->Project("large_all_adcsigma","gaus_sigma:Lhv",large_all_cut);
-  tr->Project("large_reg_adcsigma","gaus_sigma:Lhv",large_reg_cut);
+  tr->Project("large_psu_adcsigma","gaus_sigma:Lhv",large_psu_cut);
   tr->Project("russian_adcsigma","gaus_sigma:Shv",russian_cut);
   tr->Project("yale_adcsigma","gaus_sigma:Shv",yale_cut);
 
   tr->Project("large_all_res","gaus_sigma/gaus_mean:Lhv",large_all_cut);
-  tr->Project("large_reg_res","gaus_sigma/gaus_mean:Lhv",large_reg_cut);
+  tr->Project("large_psu_res","gaus_sigma/gaus_mean:Lhv",large_psu_cut);
   tr->Project("russian_res","gaus_sigma/gaus_mean:Shv",russian_cut);
   tr->Project("yale_res","gaus_sigma/gaus_mean:Shv",yale_cut);
   */
@@ -270,17 +270,17 @@ void draw_LED_resolutions(Int_t day=0)
   // USE DISTRIBUTION RMS/MEAN
   ///*
   tr->Project("large_all_adcmean","dist_mean:Lhv",large_all_cut);
-  tr->Project("large_reg_adcmean","dist_mean:Lhv",large_reg_cut);
+  tr->Project("large_psu_adcmean","dist_mean:Lhv",large_psu_cut);
   tr->Project("russian_adcmean","dist_mean:Shv",russian_cut);
   tr->Project("yale_adcmean","dist_mean:Shv",yale_cut);
 
   tr->Project("large_all_adcsigma","dist_sigma:Lhv",large_all_cut);
-  tr->Project("large_reg_adcsigma","dist_sigma:Lhv",large_reg_cut);
+  tr->Project("large_psu_adcsigma","dist_sigma:Lhv",large_psu_cut);
   tr->Project("russian_adcsigma","dist_sigma:Shv",russian_cut);
   tr->Project("yale_adcsigma","dist_sigma:Shv",yale_cut);
 
   tr->Project("large_all_res","dist_sigma/dist_mean:Lhv",large_all_cut);
-  tr->Project("large_reg_res","dist_sigma/dist_mean:Lhv",large_reg_cut);
+  tr->Project("large_psu_res","dist_sigma/dist_mean:Lhv",large_psu_cut);
   tr->Project("russian_res","dist_sigma/dist_mean:Shv",russian_cut);
   tr->Project("yale_res","dist_sigma/dist_mean:Shv",yale_cut);
   //*/
@@ -327,34 +327,34 @@ void draw_LED_resolutions(Int_t day=0)
 
   // profiles
   TProfile * large_all_adcmean_pfx = large_all_adcmean->ProfileX();
-  TProfile * large_reg_adcmean_pfx = large_reg_adcmean->ProfileX();
+  TProfile * large_psu_adcmean_pfx = large_psu_adcmean->ProfileX();
   TProfile * russian_adcmean_pfx = russian_adcmean->ProfileX();
   TProfile * yale_adcmean_pfx = yale_adcmean->ProfileX();
   
   TProfile * large_all_adcsigma_pfx = large_all_adcsigma->ProfileX();
-  TProfile * large_reg_adcsigma_pfx = large_reg_adcsigma->ProfileX();
+  TProfile * large_psu_adcsigma_pfx = large_psu_adcsigma->ProfileX();
   TProfile * russian_adcsigma_pfx = russian_adcsigma->ProfileX();
   TProfile * yale_adcsigma_pfx = yale_adcsigma->ProfileX();
 
   TProfile * large_all_res_pfx = large_all_res->ProfileX();
-  TProfile * large_reg_res_pfx = large_reg_res->ProfileX();
+  TProfile * large_psu_res_pfx = large_psu_res->ProfileX();
   TProfile * russian_res_pfx = russian_res->ProfileX();
   TProfile * yale_res_pfx = yale_res->ProfileX();
 
   Double_t lwidth=2;
 
   large_all_adcmean_pfx->SetLineWidth(lwidth);
-  large_reg_adcmean_pfx->SetLineWidth(lwidth);
+  large_psu_adcmean_pfx->SetLineWidth(lwidth);
   russian_adcmean_pfx->SetLineWidth(lwidth);
   yale_adcmean_pfx->SetLineWidth(lwidth);
 
   large_all_adcsigma_pfx->SetLineWidth(lwidth);
-  large_reg_adcsigma_pfx->SetLineWidth(lwidth);
+  large_psu_adcsigma_pfx->SetLineWidth(lwidth);
   russian_adcsigma_pfx->SetLineWidth(lwidth);
   yale_adcsigma_pfx->SetLineWidth(lwidth);
 
   large_all_res_pfx->SetLineWidth(lwidth);
-  large_reg_res_pfx->SetLineWidth(lwidth);
+  large_psu_res_pfx->SetLineWidth(lwidth);
   russian_res_pfx->SetLineWidth(lwidth);
   yale_res_pfx->SetLineWidth(lwidth);
 
@@ -367,11 +367,11 @@ void draw_LED_resolutions(Int_t day=0)
   large_all_adcmean_canv->SetGrid(1,1);
   large_all_adcmean->Draw("colz");
   large_all_adcmean_pfx->Draw("same");
-  TCanvas * large_reg_adcmean_canv = new TCanvas("large_reg_adcmean_canv","large_reg_adcmean_canv",600,600);
-  large_reg_adcmean_canv->SetLogz();
-  large_reg_adcmean_canv->SetGrid(1,1);
-  large_reg_adcmean->Draw("colz");
-  large_reg_adcmean_pfx->Draw("same");
+  TCanvas * large_psu_adcmean_canv = new TCanvas("large_psu_adcmean_canv","large_psu_adcmean_canv",600,600);
+  large_psu_adcmean_canv->SetLogz();
+  large_psu_adcmean_canv->SetGrid(1,1);
+  large_psu_adcmean->Draw("colz");
+  large_psu_adcmean_pfx->Draw("same");
   TCanvas * russian_adcmean_canv = new TCanvas("russian_adcmean_canv","russian_adcmean_canv",600,600);
   russian_adcmean_canv->SetLogz();
   russian_adcmean_canv->SetGrid(1,1);
@@ -390,12 +390,12 @@ void draw_LED_resolutions(Int_t day=0)
   large_all_adcsigma->Draw("colz");
   large_all_adcsigma_pfx->Draw("same");
   large_all_adcsigma->GetYaxis()->SetRangeUser(0,500);
-  TCanvas * large_reg_adcsigma_canv = new TCanvas("large_reg_adcsigma_canv","large_reg_adcsigma_canv",600,600);
-  large_reg_adcsigma_canv->SetLogz();
-  large_reg_adcsigma_canv->SetGrid(1,1);
-  large_reg_adcsigma->Draw("colz");
-  large_reg_adcsigma_pfx->Draw("same");
-  large_reg_adcsigma->GetYaxis()->SetRangeUser(0,500);
+  TCanvas * large_psu_adcsigma_canv = new TCanvas("large_psu_adcsigma_canv","large_psu_adcsigma_canv",600,600);
+  large_psu_adcsigma_canv->SetLogz();
+  large_psu_adcsigma_canv->SetGrid(1,1);
+  large_psu_adcsigma->Draw("colz");
+  large_psu_adcsigma_pfx->Draw("same");
+  large_psu_adcsigma->GetYaxis()->SetRangeUser(0,500);
   TCanvas * russian_adcsigma_canv = new TCanvas("russian_adcsigma_canv","russian_adcsigma_canv",600,600);
   russian_adcsigma_canv->SetLogz();
   russian_adcsigma_canv->SetGrid(1,1);
@@ -416,12 +416,12 @@ void draw_LED_resolutions(Int_t day=0)
   large_all_res->Draw("colz");
   large_all_res_pfx->Draw("same");
   large_all_res->GetYaxis()->SetRangeUser(0,RES_MAX);
-  TCanvas * large_reg_res_canv = new TCanvas("large_reg_res_canv","large_reg_res_canv",600,600);
-  large_reg_res_canv->SetLogz();
-  large_reg_res_canv->SetGrid(1,1);
-  large_reg_res->Draw("colz");
-  large_reg_res_pfx->Draw("same");
-  large_reg_res->GetYaxis()->SetRangeUser(0,RES_MAX);
+  TCanvas * large_psu_res_canv = new TCanvas("large_psu_res_canv","large_psu_res_canv",600,600);
+  large_psu_res_canv->SetLogz();
+  large_psu_res_canv->SetGrid(1,1);
+  large_psu_res->Draw("colz");
+  large_psu_res_pfx->Draw("same");
+  large_psu_res->GetYaxis()->SetRangeUser(0,RES_MAX);
   TCanvas * russian_res_canv = new TCanvas("russian_res_canv","russian_res_canv",600,600);
   russian_res_canv->SetLogz();
   russian_res_canv->SetGrid(1,1);
@@ -439,22 +439,22 @@ void draw_LED_resolutions(Int_t day=0)
 
   // write
   large_all_chisq->Write();
-  large_reg_chisq->Write();
+  large_psu_chisq->Write();
   russian_chisq->Write();
   yale_chisq->Write();
 
   large_all_adcmean_canv->Write();
-  large_reg_adcmean_canv->Write();
+  large_psu_adcmean_canv->Write();
   russian_adcmean_canv->Write();
   yale_adcmean_canv->Write();
 
   large_all_adcsigma_canv->Write();
-  large_reg_adcsigma_canv->Write();
+  large_psu_adcsigma_canv->Write();
   russian_adcsigma_canv->Write();
   yale_adcsigma_canv->Write();
 
   large_all_res_canv->Write();
-  large_reg_res_canv->Write();
+  large_psu_res_canv->Write();
   russian_res_canv->Write();
   yale_res_canv->Write();
 

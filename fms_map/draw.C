@@ -1,6 +1,6 @@
 void draw()
 {
-  TFile * infile = new TFile("tree.root","READ");
+  TFile * infile = new TFile("geotr.root","READ");
   TTree * tr = (TTree*) infile->Get("geotr");
   
   Int_t nstb,row,col;
@@ -13,14 +13,16 @@ void draw()
   tr->SetBranchAddress("hvaddress_char",hvaddress_char);
 
   // cell types
-  const Int_t NUM_TYPES=4;
+  const Int_t NUM_TYPES=6;
   char cell_type_def[NUM_TYPES][32];
-  strcpy(cell_type_def[0],"large_edge");
-  strcpy(cell_type_def[1],"large_regular");
-  strcpy(cell_type_def[2],"small_russian");
-  strcpy(cell_type_def[3],"small_yale");
+  strcpy(cell_type_def[0],"large_psu");
+  strcpy(cell_type_def[1],"large_fermi");
+  strcpy(cell_type_def[2],"large_resistive");
+  strcpy(cell_type_def[3],"small_russian");
+  strcpy(cell_type_def[4],"small_yale");
+  strcpy(cell_type_def[5],"not_stacked");
   char cell_type_legend[1024];
-  strcpy(cell_type_legend,"legend:");
+  strcpy(cell_type_legend,"leg:");
   for(Int_t i=0; i<NUM_TYPES; i++) 
     sprintf(cell_type_legend,"%s %d=%s",cell_type_legend,i+1,cell_type_def[i]);
 
@@ -47,7 +49,7 @@ void draw()
   TH2F* large_hvslot=new TH2F("large_hvslot","lecroy slot",34,-98.6,98.6,34,-98.6,98.6);
   TH2F* large_hvchan=new TH2F("large_hvchan","lecroy channel",34,-98.6,98.6,34,-98.6,98.6);
 
-  TH2F* small_hvboard=new TH2F("small_hvboard","motherboard number",52,-98.6,98.6,52,-98.6,98.6);
+  TH2F* small_hvboard=new TH2F("small_hvboard","motherboard number N (device=N%2)",52,-98.6,98.6,52,-98.6,98.6);
   TH2F* small_hvchip=new TH2F("small_hvchip","motherboard chip",52,-98.6,98.6,52,-98.6,98.6);
   TH2F* small_hvchan=new TH2F("small_hvchan","motherboard channel",52,-98.6,98.6,52,-98.6,98.6);
   TH2F* small_hvaddress=new TH2F("small_hvaddress","base address (text = address integer)",52,-98.6,98.6,52,-98.6,98.6);

@@ -1,4 +1,16 @@
-mk_tree.C : FULL_MAP --> tree.root
-draw.C : tree.root --> maps.root
+mk_tree.C : FULL_MAP --> geotr.root
+draw.C : geotr.root --> maps.root
 print.C : maps.root --> maps.pdf
-mk_table.C : tree.root --> table_{large,small}.txt
+mk_table.C : geotr.root --> table_{large,small}.txt
+
+-----------------------
+
+if you want to change anything about the map:
+make your changes in:
+  FULL_MAP
+  excel_{small,large}.ods (and print new pdfs
+  IMPORTANT: in Thomas's code: 
+    fmsvoltages2015/tables/2015fmsCellInfoTable.txt
+    (maybe I should write a script to generate this file
+     from FULL_MAP to reduce number of changes to make...)
+then run the scripts listed above

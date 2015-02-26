@@ -2,7 +2,7 @@
 
 void mk_tree(const char * filename="FULL_MAP")
 {
-  TFile * outfile = new TFile("tree.root","RECREATE");
+  TFile * outfile = new TFile("geotr.root","RECREATE");
   TTree * tr = new TTree();
   char str[512];
   strcpy(str,"nstb/I:chan/I:row/I:col/I"); // cell coordinates
@@ -63,22 +63,22 @@ void mk_tree(const char * filename="FULL_MAP")
     // classify cell types
     if(nstb==1||nstb==2)
     {
-      if(row==0 ||
-          (row==1 && col==10) ||
-          (row==2 && col==11) ||
-          (row==3 && col==12) ||
-          (row==4 && col==13) ||
-          (row==5 && col==14) ||
-          (row==6 && col==15) ||
-          col==16 ||
-          (row==27 && col==15) ||
-          (row==28 && col==14) ||
-          (row==29 && col==13) ||
-          (row==30 && col==12) ||
-          (row==31 && col==11) ||
-          (row==32 && col==10) ||
-          row==33) strcpy(cell_type,"large_edge");
-      else strcpy(cell_type,"large_regular");
+      if( nstb==1 && 
+          (chan==9 || chan==10 || chan==28) )
+        strcpy(cell_type,"not_stacked");
+      else if( nstb==1 && row==7 && 
+          col>=10 && col<=15 )
+        strcpy(cell_type,"large_resistive");
+      else if( ( nstb==1 &&
+                 ( (chan>=25 && chan<=27) ||
+                   (chan>=43 && chan<=45) ||
+                   (chan>=62 && chan<=63) )) ||
+               col==9+row ||
+               col==16 ||
+               col==42-row ||
+               row%33==0 )
+        strcpy(cell_type,"large_fermi");
+      else strcpy(cell_type,"large_psu");
     }
     else
     {
@@ -127,5 +127,5 @@ void mk_tree(const char * filename="FULL_MAP")
     outtr->Fill();
   };
   outtr->Write("geotr");
-  printf("tree.root created\n");
+  printf("geotr.root created\n");
 };

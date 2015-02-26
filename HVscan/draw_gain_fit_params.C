@@ -40,10 +40,10 @@ void draw_gain_fit_params(const char * filename="hvtr.root")
   small_chisq->GetMaximum(3000);
   large_chisq->SetMinimum(0);
   small_chisq->SetMinimum(0);
-  TH1F * alpha_dist_large_regular = new TH1F("alpha_dist_large_regular",
-    "#alpha distribution -- large regular cells",200,alpha_min,alpha_max_large);
-  TH1F * alpha_dist_large_edge = new TH1F("alpha_dist_large_edge",
-    "#alpha distribution -- large edge cells",200,alpha_min,alpha_max_large);
+  TH1F * alpha_dist_large_psu_and_res = new TH1F("alpha_dist_large_psu_and_res",
+    "#alpha distribution -- large psu and resistive cells",200,alpha_min,alpha_max_large);
+  TH1F * alpha_dist_large_fermi = new TH1F("alpha_dist_large_fermi",
+    "#alpha distribution -- large fermi cells",200,alpha_min,alpha_max_large);
   TH1F * alpha_dist_small_russian = new TH1F("alpha_dist_small_russian",
     "#alpha distribution -- small russian cells",200,alpha_min,alpha_max_small);
   TH1F * alpha_dist_small_yale = new TH1F("alpha_dist_small_yale",
@@ -87,12 +87,12 @@ void draw_gain_fit_params(const char * filename="hvtr.root")
   hvtr->Project("large_chisq","-5.8*(row+0.5-17):5.8*2*(nstb-1.5)*(col+.5)","(chisq/ndf)*(nstb==1||nstb==2)");
   hvtr->Project("small_chisq","-3.8*(row-11.5):3.8*2*(nstb-3.5)*(col+.5)","(chisq/ndf)*(nstb==3||nstb==4)");
 
-  hvtr->Project("alpha_dist_large_regular","alpha","cell_type==\"large_regular\"&&chisq>0");
-  hvtr->Project("alpha_dist_large_edge","alpha","cell_type==\"large_edge\"&&chisq>0");
+  hvtr->Project("alpha_dist_large_psu_and_res","alpha","(cell_type==\"large_psu\"||cell_type==\"large_resistive\")&&chisq>0");
+  hvtr->Project("alpha_dist_large_fermi","alpha","cell_type==\"large_fermi\"&&chisq>0");
   hvtr->Project("alpha_dist_small_russian","alpha","cell_type==\"small_russian\"&&chisq>0");
   hvtr->Project("alpha_dist_small_yale","alpha","cell_type==\"small_yale\"&&chisq>0");
-  alpha_dist_large_regular->Fit("gaus","Q","",alpha_min,alpha_max_large);
-  alpha_dist_large_edge->Fit("gaus","Q","",alpha_min,alpha_max_large);
+  alpha_dist_large_psu_and_res->Fit("gaus","Q","",alpha_min,alpha_max_large);
+  alpha_dist_large_fermi->Fit("gaus","Q","",alpha_min,alpha_max_large);
   alpha_dist_small_russian->Fit("gaus","Q","",alpha_min,alpha_max_small);
   alpha_dist_small_yale->Fit("gaus","Q","",alpha_min,alpha_max_small);
 
@@ -198,8 +198,8 @@ void draw_gain_fit_params(const char * filename="hvtr.root")
   };
   chisq_canv_large->SetGrid(0,0);
   chisq_canv_large->Write();
-  alpha_dist_large_regular->Write();
-  alpha_dist_large_edge->Write();
+  alpha_dist_large_psu_and_res->Write();
+  alpha_dist_large_fermi->Write();
   alpha_dist_small_russian->Write();
   alpha_dist_small_yale->Write();
 

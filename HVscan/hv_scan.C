@@ -123,7 +123,7 @@ void hv_scan()
   Int_t runnum[NUM];
   Double_t largehv[NUM]; // in kV
   Int_t smallrdac[NUM]; // software value {0x00-0xFF} (maps to voltage value)
-  runnum[0]=16051096; largehv[0]=1.40; smallrdac[0]=0xA0;
+  runnum[0]=16056059; largehv[0]=1.40; smallrdac[0]=0xA0;
   //*/
   
   // ====================================================================
@@ -259,6 +259,7 @@ void hv_scan()
     printf("%d %d %d [%d]\n",nstb,row,col,chan);
 
     // set alpha expected values based on cell type
+    // (only caring about large cells, small russian cells, small yale cells
     if(nstb==1 || nstb==2)
     {
       expect_alpha = expect_alpha_large;

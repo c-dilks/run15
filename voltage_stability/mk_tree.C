@@ -22,19 +22,26 @@ void mk_tree(const char * filename="master", Int_t month0=2, Int_t day0=20, Int_
   tr->SetBranchAddress("setpoint",&setpoint);
   tr->SetBranchAddress("readback",&readback);
 
-  TGraph * stability[4][16][16]; // [crate] [slot] [chan]
-  Int_t stability_i[4][16][16];
+  TGraph * stability_gr[4][16][16]; // [crate] [slot] [chan] // V_set-V_read vs. HHMM time
+  TGraph * readback_gr[4][16][16]; // [crate] [slot] [chan] // V_read vs. HHMM time
+  TGraph * setpoint_gr[4][16][16]; // [crate] [slot] [chan] // V_set vs. HHMM time
+  Int_t gr_i[4][16][16];
   for(Int_t c=0; c<4; c++)
   {
     for(Int_t sl=0; sl<16; sl++)
     {
       for(Int_t ch=0; ch<16; ch++)
       {
-        stability[c][sl][ch] = new TGraph();
-        //printf("%d %d %d %p\n",c,sl,ch,(void*)(stability[c][sl][ch]));
-        stability_i[c][sl][ch] = 0;
-        stability[c][sl][ch]->SetMarkerStyle(kFullCircle);
-        stability[c][sl][ch]->SetMarkerColor(color[c]);
+        stability_gr[c][sl][ch] = new TGraph();
+        readback_gr[c][sl][ch] = new TGraph();
+        setpoint_gr[c][sl][ch] = new TGraph();
+        gr_i[c][sl][ch] = 0;
+        stability_gr[c][sl][ch]->SetMarkerStyle(kFullCircle);
+        readback_gr[c][sl][ch]->SetMarkerStyle(kFullCircle);
+        setpoint_gr[c][sl][ch]->SetMarkerStyle(kFullCircle);
+        stability_gr[c][sl][ch]->SetMarkerColor(color[c]);
+        readback_gr[c][sl][ch]->SetMarkerColor(color[c]);
+        setpoint_gr[c][sl][ch]->SetMarkerColor(color[c]);
       };
     };
   };
@@ -50,11 +57,19 @@ void mk_tree(const char * filename="master", Int_t month0=2, Int_t day0=20, Int_
       c = CrateToIndex(crate);
       if(100*hour+minute>=timecut)
       {
-        stability[c][slot][chan]->SetPoint(
-          stability_i[c][slot][chan],
+        stability_gr[c][slot][chan]->SetPoint(
+          gr_i[c][slot][chan],
           100*hour+minute,
           setpoint-readback);
-        stability_i[c][slot][chan]++;
+        readback_gr[c][slot][chan]->SetPoint(
+          gr_i[c][slot][chan],
+          100*hour+minute,
+          readback);
+        setpoint_gr[c][slot][chan]->SetPoint(
+          gr_i[c][slot][chan],
+          100*hour+minute,
+          setpoint);
+        gr_i[c][slot][chan]++;
       };
     };
   };
@@ -98,9 +113,9 @@ void mk_tree(const char * filename="master", Int_t month0=2, Int_t day0=20, Int_
       multi_stability[sl][ch]->SetTitle(multi_stability_t[sl][ch]);
       for(Int_t c=0; c<4; c++)
       {
-        if(stability[c][sl][ch]!=NULL)
+        if(stability_gr[c][sl][ch]!=NULL)
         {
-          multi_stability[sl][ch]->Add(stability[c][sl][ch]);
+          multi_stability[sl][ch]->Add(stability_gr[c][sl][ch]);
         };
       };
       canv->cd(padnum);
@@ -125,12 +140,18 @@ void mk_tree(const char * filename="master", Int_t month0=2, Int_t day0=20, Int_
     };
   };
 
-  TH2F * rms_plot[4];
+  TH2F * rms_plot[4]; // rms of V_set-V_read
   char rms_plot_t[4][64];
   char rms_plot_n[4][32];
-  TH2F * ave_plot[4];
+  TH2F * ave_plot[4]; // abs value of average V_set-V_read
   char ave_plot_t[4][64];
   char ave_plot_n[4][32];
+  TH2F * set_plot[4]; // abs value of average V_set
+  char set_plot_t[4][64];
+  char set_plot_n[4][32];
+  TH2F * rdb_plot[4]; // abs value of average V_read
+  char rdb_plot_t[4][64];
+  char rdb_plot_n[4][32];
   Int_t binn;
   for(Int_t c=0; c<4; c++)
   {
@@ -140,46 +161,91 @@ void mk_tree(const char * filename="master", Int_t month0=2, Int_t day0=20, Int_
     sprintf(ave_plot_t[c],"|<V_{set}-V_{read}>| vs. slot,channel [%d];slot;channel",IndexToCrate(c));
     sprintf(ave_plot_n[c],"ave_plot_%d",IndexToCrate(c));
     ave_plot[c] = new TH2F(ave_plot_n[c],ave_plot_t[c],16,-0.5,15.5,16,-0.5,15.5);
+    sprintf(set_plot_t[c],"|<V_{set}>| vs. slot,channel [%d];slot;channel",IndexToCrate(c));
+    sprintf(set_plot_n[c],"set_plot_%d",IndexToCrate(c));
+    set_plot[c] = new TH2F(set_plot_n[c],set_plot_t[c],16,-0.5,15.5,16,-0.5,15.5);
+    sprintf(rdb_plot_t[c],"|<V_{read}>| vs. slot,channel [%d];slot;channel",IndexToCrate(c));
+    sprintf(rdb_plot_n[c],"rdb_plot_%d",IndexToCrate(c));
+    rdb_plot[c] = new TH2F(rdb_plot_n[c],rdb_plot_t[c],16,-0.5,15.5,16,-0.5,15.5);
+
     for(Int_t sl=0; sl<16; sl++)
     {
       for(Int_t ch=0; ch<16; ch++)
       {
-        if(stability_i[c][sl][ch])
+        if(gr_i[c][sl][ch])
         {
           binn = rms_plot[c]->FindBin(sl,ch);
-          rms_plot[c]->SetBinContent(binn,stability[c][sl][ch]->GetRMS(2));
-          ave_plot[c]->SetBinContent(binn,fabs(stability[c][sl][ch]->GetMean(2)));
+          rms_plot[c]->SetBinContent(binn,stability_gr[c][sl][ch]->GetRMS(2));
+          ave_plot[c]->SetBinContent(binn,fabs(stability_gr[c][sl][ch]->GetMean(2)));
+          set_plot[c]->SetBinContent(binn,fabs(setpoint_gr[c][sl][ch]->GetMean(2)));
+          rdb_plot[c]->SetBinContent(binn,fabs(readback_gr[c][sl][ch]->GetMean(2)));
         };
       };
     };
   };
 
-  TCanvas * rms_canv = new TCanvas("rms_canv","rms_canv",750,750);
+  gStyle->SetOptStat(0);
+  gStyle->SetPaintTextFormat("5.2f");
+
+  char summarypdfL[64];
+  char summarypdf[64];
+  char summarypdfR[64];
+  sprintf(summarypdf,"summary.%d.%d.%d.pdf",year,month,day);
+  sprintf(summarypdfL,"%s(",summarypdf);
+  sprintf(summarypdfR,"%s)",summarypdf);
+
+  TCanvas * rms_canv = new TCanvas("rms_canv","rms_canv",1700,1000);
   rms_canv->Divide(2,2);
   char draw_style[16];
-  strcpy(draw_style,"lego2");
+  strcpy(draw_style,"colztext");
   //for(Int_t c=1; c<5; c++) rms_canv->GetPad(c)->SetLogz();
   rms_canv->cd(1); rms_plot[0]->Draw(draw_style);
   rms_canv->cd(3); rms_plot[1]->Draw(draw_style);
   rms_canv->cd(2); rms_plot[2]->Draw(draw_style);
   rms_canv->cd(4); rms_plot[3]->Draw(draw_style);
   rms_canv->Write();
+  rms_canv->Print(summarypdfL,"pdf");
 
-  TCanvas * ave_canv = new TCanvas("ave_canv","ave_canv",750,750);
+  TCanvas * ave_canv = new TCanvas("ave_canv","ave_canv",1700,1000);
   ave_canv->Divide(2,2);
   char draw_style[16];
-  strcpy(draw_style,"lego2");
+  strcpy(draw_style,"colztext");
   //for(Int_t c=1; c<5; c++) ave_canv->GetPad(c)->SetLogz();
   ave_canv->cd(1); ave_plot[0]->Draw(draw_style);
   ave_canv->cd(3); ave_plot[1]->Draw(draw_style);
   ave_canv->cd(2); ave_plot[2]->Draw(draw_style);
   ave_canv->cd(4); ave_plot[3]->Draw(draw_style);
   ave_canv->Write();
+  ave_canv->Print(summarypdf,"pdf");
+
+  TCanvas * rdb_canv = new TCanvas("rdb_canv","rdb_canv",1700,1000);
+  rdb_canv->Divide(2,2);
+  char draw_style[16];
+  strcpy(draw_style,"colztext");
+  //for(Int_t c=1; c<5; c++) rdb_canv->GetPad(c)->SetLogz();
+  rdb_canv->cd(1); rdb_plot[0]->Draw(draw_style);
+  rdb_canv->cd(3); rdb_plot[1]->Draw(draw_style);
+  rdb_canv->cd(2); rdb_plot[2]->Draw(draw_style);
+  rdb_canv->cd(4); rdb_plot[3]->Draw(draw_style);
+  rdb_canv->Write();
+  rdb_canv->Print(summarypdf,"pdf");
+
+  TCanvas * set_canv = new TCanvas("set_canv","set_canv",1700,1000);
+  set_canv->Divide(2,2);
+  char draw_style[16];
+  strcpy(draw_style,"colztext");
+  //for(Int_t c=1; c<5; c++) set_canv->GetPad(c)->SetLogz();
+  set_canv->cd(1); set_plot[0]->Draw(draw_style);
+  set_canv->cd(3); set_plot[1]->Draw(draw_style);
+  set_canv->cd(2); set_plot[2]->Draw(draw_style);
+  set_canv->cd(4); set_plot[3]->Draw(draw_style);
+  set_canv->Write();
+  set_canv->Print(summarypdfR,"pdf");
 
 
-
-
-  printf("%s created\n",pdfname);
+  printf("\n");
+  printf("%s created (V_set-V_read vs. HHMM time)\n",pdfname);
+  printf("%s created (summary diagnostics)\n",summarypdf);
   printf("%s created\n",outfilename);
 }
 

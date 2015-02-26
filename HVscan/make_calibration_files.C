@@ -42,8 +42,10 @@ void make_calibration_files(const char * filename="hvtr.root", Bool_t use_averag
     tr->GetEntry(i);
     if(use_averages)
     {
-      if(!strcmp(cell_type,"large_regular") ||
-         !strcmp(cell_type,"large_edge")) alpha=expect_alpha_large;
+      if(!strcmp(cell_type,"large_psu") ||
+         !strcmp(cell_type,"large_fermi") ||
+         !strcmp(cell_type,"large_resistive") ||
+         !strcmp(cell_type,"not_stacked")) alpha=expect_alpha_large;
       else if(!strcmp(cell_type,"small_russian")) 
         alpha=expect_alpha_russian;
       else if(!strcmp(cell_type,"small_yale"))
