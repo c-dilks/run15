@@ -1,5 +1,6 @@
 void mk_tree(const char * filename="master", Int_t month0=2, Int_t day0=20, Int_t timecut=0)
 {
+  // make tree after daily log file
   char outfilename[128];
   sprintf(outfilename,"rootfile.2015.%d.%d.root",month0,day0);
   TFile * outfile = new TFile(outfilename,"RECREATE");
@@ -22,6 +23,17 @@ void mk_tree(const char * filename="master", Int_t month0=2, Int_t day0=20, Int_
   tr->SetBranchAddress("setpoint",&setpoint);
   tr->SetBranchAddress("readback",&readback);
 
+
+  // read list of unused channels
+  TTree * ul = new TTree(); // list of unused channels
+  ul->ReadFile("unused_list.txt","crate/I:slot/I:chan/I");
+  Int_t ucrate,uslot,uchan;
+  ul->SetBranchAddress("crate",&ucrate);
+  ul->SetBranchAddress("slot",&uslot);
+  ul->SetBranchAddress("chan",&uchan);
+
+
+  // initalise (x) vs. time plots
   TGraph * stability_gr[4][16][16]; // [crate] [slot] [chan] // V_set-V_read vs. HHMM time
   TGraph * readback_gr[4][16][16]; // [crate] [slot] [chan] // V_read vs. HHMM time
   TGraph * setpoint_gr[4][16][16]; // [crate] [slot] [chan] // V_set vs. HHMM time
@@ -47,6 +59,7 @@ void mk_tree(const char * filename="master", Int_t month0=2, Int_t day0=20, Int_
   };
   
 
+  // fill (x) vs. time plots
   for(Int_t i=0; i<tr->GetEntries(); i++)
   {
     tr->GetEntry(i);
@@ -75,7 +88,7 @@ void mk_tree(const char * filename="master", Int_t month0=2, Int_t day0=20, Int_
   };
 
 
-
+  // define legend for voltage difference vs. time plots
   TLatex * color_leg[4];
   char color_leg_txt[4][8];
   for(Int_t c=0; c<4; c++)
@@ -87,10 +100,14 @@ void mk_tree(const char * filename="master", Int_t month0=2, Int_t day0=20, Int_
     color_leg[c]->SetTextSize(0.08);
   };
 
+  
+  // draw pdf for voltage difference vs. time plots
   gStyle->SetTitleH(0.1);
   gStyle->SetTitleW(0.7);
   TMultiGraph * multi_stability[16][16]; // [slot] [chan]
   char multi_stability_t[16][16][512];
+  char unused_lab[32];
+  char unused_str[40];
   TCanvas * canv = new TCanvas("canv","canv",700,1200);
   canv->Divide(1,8);
   Int_t padnum=1;
@@ -106,9 +123,28 @@ void mk_tree(const char * filename="master", Int_t month0=2, Int_t day0=20, Int_
   {
     for(Int_t ch=0; ch<16; ch++)
     {
+      strcpy(unused_str,"");
+      strcpy(unused_lab,"");
+      for(Int_t ent=0; ent<ul->GetEntries(); ent++)
+      {
+        ul->GetEntry(ent);
+        if(sl==uslot && ch==uchan) 
+        {
+          strcpy(unused_lab," -- unused chan in ");
+          sprintf(unused_str,"%s %d",unused_str,ucrate);
+        };
+      };
+      if(c==0 && (
+            (sl==13 && ch==0) ||
+            (sl==14 && ch==2) ||
+            (sl==15 && ch==1)))
+      {
+        strcpy(unused_lab," -- unused chan in ");
+        sprintf(unused_str,"%s [7005_not_stacked]",unused_str);
+      };
       sprintf(multi_stability_t[sl][ch],
-        "V_{set}-V_{read} vs. time (%d,%d) on %d-%d-%d",
-        sl,ch,year,month,day);
+        "V_{set}-V_{read} vs. time (%d,%d) on %d-%d-%d%s%s",
+        sl,ch,year,month,day,unused_lab,unused_str);
       multi_stability[sl][ch] = new TMultiGraph();
       multi_stability[sl][ch]->SetTitle(multi_stability_t[sl][ch]);
       for(Int_t c=0; c<4; c++)
@@ -140,6 +176,10 @@ void mk_tree(const char * filename="master", Int_t month0=2, Int_t day0=20, Int_
     };
   };
 
+
+
+
+  // summary plots
   TH2F * rms_plot[4]; // rms of V_set-V_read
   char rms_plot_t[4][64];
   char rms_plot_n[4][32];
@@ -153,6 +193,16 @@ void mk_tree(const char * filename="master", Int_t month0=2, Int_t day0=20, Int_
   char rdb_plot_t[4][64];
   char rdb_plot_n[4][32];
   Int_t binn;
+  TGraph * unused_gr[4]; // unused channel markers
+  Int_t unused_gr_i[4]; 
+  for(Int_t c=0; c<4; c++) 
+  {
+    unused_gr[c] = new TGraph();
+    unused_gr_i[c]=0;
+    unused_gr[c]->SetMarkerStyle(5);
+    unused_gr[c]->SetMarkerSize(2.5);
+    unused_gr[c]->SetMarkerColorAlpha(kBlack,0.5);
+  };
   for(Int_t c=0; c<4; c++)
   {
     sprintf(rms_plot_t[c],"RMS(V_{set}-V_{read}) vs. slot,channel [%d];slot;channel",IndexToCrate(c));
@@ -174,16 +224,38 @@ void mk_tree(const char * filename="master", Int_t month0=2, Int_t day0=20, Int_
       {
         if(gr_i[c][sl][ch])
         {
-          binn = rms_plot[c]->FindBin(sl,ch);
-          rms_plot[c]->SetBinContent(binn,stability_gr[c][sl][ch]->GetRMS(2));
-          ave_plot[c]->SetBinContent(binn,fabs(stability_gr[c][sl][ch]->GetMean(2)));
-          set_plot[c]->SetBinContent(binn,fabs(setpoint_gr[c][sl][ch]->GetMean(2)));
-          rdb_plot[c]->SetBinContent(binn,fabs(readback_gr[c][sl][ch]->GetMean(2)));
+          if(!(c==0 && (
+                (sl==13 && ch==0) ||
+                (sl==14 && ch==2) ||
+                (sl==15 && ch==1))))
+          {
+            binn = rms_plot[c]->FindBin(sl,ch);
+            rms_plot[c]->SetBinContent(binn,stability_gr[c][sl][ch]->GetRMS(2));
+            ave_plot[c]->SetBinContent(binn,fabs(stability_gr[c][sl][ch]->GetMean(2)));
+            set_plot[c]->SetBinContent(binn,fabs(setpoint_gr[c][sl][ch]->GetMean(2)));
+            rdb_plot[c]->SetBinContent(binn,fabs(readback_gr[c][sl][ch]->GetMean(2)));
+          };
+        };
+        for(Int_t ent=0; ent<ul->GetEntries(); ent++)
+        {
+          ul->GetEntry(ent);
+          // filters not_stacked cells and unused channels
+          if((sl==uslot && ch==uchan && IndexToCrate(c)==ucrate) ||
+             (c==0 && (
+                (sl==13 && ch==0) ||
+                (sl==14 && ch==2) ||
+                (sl==15 && ch==1))))
+          {
+            unused_gr[c]->SetPoint(unused_gr_i[c],sl,ch);
+            unused_gr_i[c]++;
+          };
         };
       };
     };
   };
 
+
+  // draw summary plots
   gStyle->SetOptStat(0);
   gStyle->SetPaintTextFormat("5.2f");
 
@@ -199,10 +271,10 @@ void mk_tree(const char * filename="master", Int_t month0=2, Int_t day0=20, Int_
   char draw_style[16];
   strcpy(draw_style,"colztext");
   //for(Int_t c=1; c<5; c++) rms_canv->GetPad(c)->SetLogz();
-  rms_canv->cd(1); rms_plot[0]->Draw(draw_style);
-  rms_canv->cd(3); rms_plot[1]->Draw(draw_style);
-  rms_canv->cd(2); rms_plot[2]->Draw(draw_style);
-  rms_canv->cd(4); rms_plot[3]->Draw(draw_style);
+  rms_canv->cd(1); rms_plot[0]->Draw(draw_style); unused_gr[0]->Draw("P");
+  rms_canv->cd(3); rms_plot[1]->Draw(draw_style); unused_gr[1]->Draw("P");
+  rms_canv->cd(2); rms_plot[2]->Draw(draw_style); unused_gr[2]->Draw("P");
+  rms_canv->cd(4); rms_plot[3]->Draw(draw_style); unused_gr[3]->Draw("P");
   rms_canv->Write();
   rms_canv->Print(summarypdfL,"pdf");
 
@@ -211,10 +283,10 @@ void mk_tree(const char * filename="master", Int_t month0=2, Int_t day0=20, Int_
   char draw_style[16];
   strcpy(draw_style,"colztext");
   //for(Int_t c=1; c<5; c++) ave_canv->GetPad(c)->SetLogz();
-  ave_canv->cd(1); ave_plot[0]->Draw(draw_style);
-  ave_canv->cd(3); ave_plot[1]->Draw(draw_style);
-  ave_canv->cd(2); ave_plot[2]->Draw(draw_style);
-  ave_canv->cd(4); ave_plot[3]->Draw(draw_style);
+  ave_canv->cd(1); ave_plot[0]->Draw(draw_style); unused_gr[0]->Draw("P");
+  ave_canv->cd(3); ave_plot[1]->Draw(draw_style); unused_gr[1]->Draw("P");
+  ave_canv->cd(2); ave_plot[2]->Draw(draw_style); unused_gr[2]->Draw("P");
+  ave_canv->cd(4); ave_plot[3]->Draw(draw_style); unused_gr[3]->Draw("P");
   ave_canv->Write();
   ave_canv->Print(summarypdf,"pdf");
 
@@ -223,10 +295,10 @@ void mk_tree(const char * filename="master", Int_t month0=2, Int_t day0=20, Int_
   char draw_style[16];
   strcpy(draw_style,"colztext");
   //for(Int_t c=1; c<5; c++) rdb_canv->GetPad(c)->SetLogz();
-  rdb_canv->cd(1); rdb_plot[0]->Draw(draw_style);
-  rdb_canv->cd(3); rdb_plot[1]->Draw(draw_style);
-  rdb_canv->cd(2); rdb_plot[2]->Draw(draw_style);
-  rdb_canv->cd(4); rdb_plot[3]->Draw(draw_style);
+  rdb_canv->cd(1); rdb_plot[0]->Draw(draw_style); unused_gr[0]->Draw("P");
+  rdb_canv->cd(3); rdb_plot[1]->Draw(draw_style); unused_gr[1]->Draw("P");
+  rdb_canv->cd(2); rdb_plot[2]->Draw(draw_style); unused_gr[2]->Draw("P");
+  rdb_canv->cd(4); rdb_plot[3]->Draw(draw_style); unused_gr[3]->Draw("P");
   rdb_canv->Write();
   rdb_canv->Print(summarypdf,"pdf");
 
@@ -235,10 +307,10 @@ void mk_tree(const char * filename="master", Int_t month0=2, Int_t day0=20, Int_
   char draw_style[16];
   strcpy(draw_style,"colztext");
   //for(Int_t c=1; c<5; c++) set_canv->GetPad(c)->SetLogz();
-  set_canv->cd(1); set_plot[0]->Draw(draw_style);
-  set_canv->cd(3); set_plot[1]->Draw(draw_style);
-  set_canv->cd(2); set_plot[2]->Draw(draw_style);
-  set_canv->cd(4); set_plot[3]->Draw(draw_style);
+  set_canv->cd(1); set_plot[0]->Draw(draw_style); unused_gr[0]->Draw("P");
+  set_canv->cd(3); set_plot[1]->Draw(draw_style); unused_gr[1]->Draw("P");
+  set_canv->cd(2); set_plot[2]->Draw(draw_style); unused_gr[2]->Draw("P");
+  set_canv->cd(4); set_plot[3]->Draw(draw_style); unused_gr[3]->Draw("P");
   set_canv->Write();
   set_canv->Print(summarypdfR,"pdf");
 
@@ -249,10 +321,12 @@ void mk_tree(const char * filename="master", Int_t month0=2, Int_t day0=20, Int_
   printf("%s created\n",outfilename);
 }
 
+
 Int_t CrateToIndex(Int_t crate0)
 {
   return crate0-7005;
 }
+
 
 Int_t IndexToCrate(Int_t index0)
 {
