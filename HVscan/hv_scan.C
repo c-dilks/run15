@@ -123,7 +123,7 @@ void hv_scan()
   Int_t runnum[NUM];
   Double_t largehv[NUM]; // in kV
   Int_t smallrdac[NUM]; // software value {0x00-0xFF} (maps to voltage value)
-  runnum[0]=16056059; largehv[0]=1.40; smallrdac[0]=0xA0;
+  runnum[0]=16062061; largehv[0]=1.40; smallrdac[0]=0xA0;
   //*/
   
   // ====================================================================

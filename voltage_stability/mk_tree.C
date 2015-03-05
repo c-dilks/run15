@@ -1,4 +1,5 @@
-void mk_tree(const char * filename="master", Int_t month0=2, Int_t day0=20, Int_t timecut=0)
+void mk_tree(const char * filename="master", Int_t month0=2, Int_t day0=20, 
+              Int_t timecut_low=0, Int_t timecut_high=0)
 {
   // make tree after daily log file
   char outfilename[128];
@@ -68,7 +69,7 @@ void mk_tree(const char * filename="master", Int_t month0=2, Int_t day0=20, Int_
     {
       sscanf(time,"%d.%d.%d",&hour,&minute,&second);
       c = CrateToIndex(crate);
-      if(100*hour+minute>=timecut)
+      if(100*hour+minute>=timecut_low && (timecut_high==0 || 100*hour+minute<=timecut_high))
       {
         stability_gr[c][slot][chan]->SetPoint(
           gr_i[c][slot][chan],
@@ -130,17 +131,16 @@ void mk_tree(const char * filename="master", Int_t month0=2, Int_t day0=20, Int_
         ul->GetEntry(ent);
         if(sl==uslot && ch==uchan) 
         {
-          strcpy(unused_lab," -- unused chan in ");
+          strcpy(unused_lab," -- unused chan in");
           sprintf(unused_str,"%s %d",unused_str,ucrate);
         };
       };
-      if(c==0 && (
-            (sl==13 && ch==0) ||
-            (sl==14 && ch==2) ||
-            (sl==15 && ch==1)))
+      if((sl==13 && ch==0) ||
+         (sl==14 && ch==2) ||
+         (sl==15 && ch==1))
       {
-        strcpy(unused_lab," -- unused chan in ");
-        sprintf(unused_str,"%s [7005_not_stacked]",unused_str);
+        strcpy(unused_lab," -- unused chan in");
+        sprintf(unused_str,"%s 7005[not_stacked]",unused_str);
       };
       sprintf(multi_stability_t[sl][ch],
         "V_{set}-V_{read} vs. time (%d,%d) on %d-%d-%d%s%s",
@@ -149,7 +149,7 @@ void mk_tree(const char * filename="master", Int_t month0=2, Int_t day0=20, Int_
       multi_stability[sl][ch]->SetTitle(multi_stability_t[sl][ch]);
       for(Int_t c=0; c<4; c++)
       {
-        if(stability_gr[c][sl][ch]!=NULL)
+        if(stability_gr[c][sl][ch]!=NULL && gr_i[c][sl][ch]>0)
         {
           multi_stability[sl][ch]->Add(stability_gr[c][sl][ch]);
         };

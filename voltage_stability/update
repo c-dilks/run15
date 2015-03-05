@@ -18,4 +18,6 @@ fi
 > master
 cat history_*${month}.${day} >> master
 
-root -b -q 'mk_tree.C("master",'${month}','${day}',0)'
+root -b -q 'mk_tree.C("master",'${month}','${day}',0,0)'
+
+# 1502
