@@ -7,3 +7,4 @@ voltage_stability/history*
 voltage_stability/monitor*.pdf
 voltage_stability/summary*.pdf
 voltage_stability/rootfile*.root
+*.swp

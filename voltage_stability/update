@@ -20,4 +20,10 @@ cat history_*${month}.${day} >> master
 
 root -b -q 'mk_tree.C("master",'${month}','${day}',0,0)'
 
-# 1502
+touch monitor.pdf; rm monitor.pdf
+touch summary.pdf; rm summary.pdf
+touch rootfile.root; rm rootfile.root
+
+ln -sv monitor.2015.${month}.${day}.pdf monitor.pdf
+ln -sv summary.2015.${month}.${day}.pdf summary.pdf
+ln -sv rootfile.2015.${month}.${day}.pdf rootfile.root
