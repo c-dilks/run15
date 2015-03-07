@@ -124,7 +124,7 @@ class MainFrame
     char cell_type[32];
 
     TTree * qtbstr[4];
-    Int_t qtbs_slot,qtbs_chan,qtbs_mask,qtbs;
+    Int_t qtbs_slot,qtbs_chan,qtbs_offset,qtbs;
 
     TTree * lhvtr;
     TTree * shvtr;
@@ -279,10 +279,10 @@ void MainFrame::Init()
   {
     sprintf(qtbstr_file[i],"current_iteration/qt%d_tac.dat",i+1);
     qtbstr[i] = new TTree();
-    qtbstr[i]->ReadFile(qtbstr_file[i],"qtbs_slot/I:qtbs_chan/I:qtbs_mask/I:qtbs/I");
+    qtbstr[i]->ReadFile(qtbstr_file[i],"qtbs_slot/I:qtbs_chan/I:qtbs_offset/I:qtbs/I");
     qtbstr[i]->SetBranchAddress("qtbs_slot",&qtbs_slot);
     qtbstr[i]->SetBranchAddress("qtbs_chan",&qtbs_chan);
-    qtbstr[i]->SetBranchAddress("qtbs_mask",&qtbs_mask);
+    qtbstr[i]->SetBranchAddress("qtbs_offset",&qtbs_offset);
     qtbstr[i]->SetBranchAddress("qtbs",&qtbs);
   };
 
@@ -460,19 +460,19 @@ void MainFrame::GetGainString(char cell_gain_string0[],
   else sprintf(cell_gain_string0,"Voltage: %s  Gain: %.3f",voltage_found,gain_found);
 
   cnt=0;
-  Int_t mask_found,qtbs_found;
+  Int_t offset_found,qtbs_found;
   for(Int_t i=0; i<qtbstr[qtc-1]->GetEntries(); i++)
   {
     qtbstr[qtc-1]->GetEntry(i);
     if(qts==qtbs_slot && qtch==qtbs_chan)
     {
-      mask_found = qtbs_mask;
+      offset_found = qtbs_offset;
       qtbs_found = qtbs;
       cnt++;
     };
   };
   if(cnt>1 || cnt==0) strcpy(cell_gain_string0,"[qtbstr error]");
-  else sprintf(cell_gain_string0,"%s  Bitshift: %d  Mask: %d",cell_gain_string0,qtbs_found,mask_found);
+  else sprintf(cell_gain_string0,"%s  Bitshift: %d  Offset: %d",cell_gain_string0,qtbs_found,offset_found);
 };
 
 
