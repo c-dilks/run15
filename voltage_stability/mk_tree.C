@@ -199,9 +199,9 @@ void mk_tree(const char * filename="master", Int_t month0=2, Int_t day0=20,
   {
     unused_gr[c] = new TGraph();
     unused_gr_i[c]=0;
-    unused_gr[c]->SetMarkerStyle(5);
-    unused_gr[c]->SetMarkerSize(2.5);
-    unused_gr[c]->SetMarkerColorAlpha(kBlack,0.5);
+    unused_gr[c]->SetMarkerStyle(28);
+    unused_gr[c]->SetMarkerSize(3);
+    unused_gr[c]->SetMarkerColor(kBlack);
   };
   for(Int_t c=0; c<4; c++)
   {
