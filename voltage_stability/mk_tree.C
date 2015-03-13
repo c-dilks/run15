@@ -1,6 +1,18 @@
 void mk_tree(const char * filename="master", Int_t month0=2, Int_t day0=20, 
               Int_t timecut_low=0, Int_t timecut_high=0)
 {
+  // list of channels to not plot in summary.pdf (so scales get set properly)
+  const Int_t N_MASK = 5;
+  Int_t mask[N_MASK][3]; // [count] [crate,slot,chan]
+  Int_t ii=0;
+  mask[ii][0]=7005; mask[ii][1]=13; mask[ii++][2]=0;  // not stacked
+  mask[ii][0]=7005; mask[ii][1]=14; mask[ii++][2]=2;  // not stacked
+  mask[ii][0]=7005; mask[ii][1]=15; mask[ii++][2]=1;  // not stacked
+  mask[ii][0]=7006; mask[ii][1]=15; mask[ii++][2]=2;  // suppressed to 0 V
+  mask[ii][0]=7007; mask[ii][1]=1;  mask[ii++][2]=15; // unused channel: setpoint=900V, but readback=~1V
+
+
+
   // make tree after daily log file
   char outfilename[128];
   sprintf(outfilename,"rootfile.2015.%d.%d.root",month0,day0);
@@ -195,6 +207,9 @@ void mk_tree(const char * filename="master", Int_t month0=2, Int_t day0=20,
   Int_t binn;
   TGraph * unused_gr[4]; // unused channel markers
   Int_t unused_gr_i[4]; 
+  TGraph * masked_gr[4]; // masked channel markers
+  Int_t masked_gr_i[4]; 
+  Bool_t plot_summary_point;
   for(Int_t c=0; c<4; c++) 
   {
     unused_gr[c] = new TGraph();
@@ -202,6 +217,11 @@ void mk_tree(const char * filename="master", Int_t month0=2, Int_t day0=20,
     unused_gr[c]->SetMarkerStyle(28);
     unused_gr[c]->SetMarkerSize(3);
     unused_gr[c]->SetMarkerColor(kBlack);
+    masked_gr[c] = new TGraph();
+    masked_gr_i[c]=0;
+    masked_gr[c]->SetMarkerStyle(8);
+    masked_gr[c]->SetMarkerSize(1.5);
+    masked_gr[c]->SetMarkerColor(kBlack);
   };
   for(Int_t c=0; c<4; c++)
   {
@@ -224,10 +244,14 @@ void mk_tree(const char * filename="master", Int_t month0=2, Int_t day0=20,
       {
         if(gr_i[c][sl][ch])
         {
-          if(!(c==0 && (
-                (sl==13 && ch==0) ||
-                (sl==14 && ch==2) ||
-                (sl==15 && ch==1))))
+          plot_summary_point=true;
+          for(Int_t kk=0; kk<N_MASK; kk++)
+          {
+            if(IndexToCrate(c)==mask[kk][0] &&
+               sl==mask[kk][1] &&
+               ch==mask[kk][2]) plot_summary_point=false;
+          };
+          if(plot_summary_point) 
           {
             binn = rms_plot[c]->FindBin(sl,ch);
             rms_plot[c]->SetBinContent(binn,stability_gr[c][sl][ch]->GetRMS(2));
@@ -240,14 +264,15 @@ void mk_tree(const char * filename="master", Int_t month0=2, Int_t day0=20,
         {
           ul->GetEntry(ent);
           // filters not_stacked cells and unused channels
-          if((sl==uslot && ch==uchan && IndexToCrate(c)==ucrate) ||
-             (c==0 && (
-                (sl==13 && ch==0) ||
-                (sl==14 && ch==2) ||
-                (sl==15 && ch==1))))
+          if(sl==uslot && ch==uchan && IndexToCrate(c)==ucrate)
           {
             unused_gr[c]->SetPoint(unused_gr_i[c],sl,ch);
             unused_gr_i[c]++;
+          };
+          if(!plot_summary_point)
+          {
+            masked_gr[c]->SetPoint(masked_gr_i[c],sl,ch);
+            masked_gr_i[c]++;
           };
         };
       };
@@ -271,10 +296,13 @@ void mk_tree(const char * filename="master", Int_t month0=2, Int_t day0=20,
   char draw_style[16];
   strcpy(draw_style,"colztext");
   //for(Int_t c=1; c<5; c++) rms_canv->GetPad(c)->SetLogz();
-  rms_canv->cd(1); rms_plot[0]->Draw(draw_style); unused_gr[0]->Draw("P");
-  rms_canv->cd(3); rms_plot[1]->Draw(draw_style); unused_gr[1]->Draw("P");
-  rms_canv->cd(2); rms_plot[2]->Draw(draw_style); unused_gr[2]->Draw("P");
-  rms_canv->cd(4); rms_plot[3]->Draw(draw_style); unused_gr[3]->Draw("P");
+  for(Int_t p=0; p<4; p++)
+  {
+    rms_canv->cd(p+1);
+    rms_plot[p]->Draw(draw_style);
+    if(unused_gr_i[p]) unused_gr[p]->Draw("P");
+    if(masked_gr_i[p]) masked_gr[p]->Draw("P");
+  };
   rms_canv->Write();
   rms_canv->Print(summarypdfL,"pdf");
 
@@ -283,10 +311,13 @@ void mk_tree(const char * filename="master", Int_t month0=2, Int_t day0=20,
   char draw_style[16];
   strcpy(draw_style,"colztext");
   //for(Int_t c=1; c<5; c++) ave_canv->GetPad(c)->SetLogz();
-  ave_canv->cd(1); ave_plot[0]->Draw(draw_style); unused_gr[0]->Draw("P");
-  ave_canv->cd(3); ave_plot[1]->Draw(draw_style); unused_gr[1]->Draw("P");
-  ave_canv->cd(2); ave_plot[2]->Draw(draw_style); unused_gr[2]->Draw("P");
-  ave_canv->cd(4); ave_plot[3]->Draw(draw_style); unused_gr[3]->Draw("P");
+  for(Int_t p=0; p<4; p++)
+  {
+    ave_canv->cd(p+1);
+    ave_plot[p]->Draw(draw_style);
+    if(unused_gr_i[p]) unused_gr[p]->Draw("P");
+    if(masked_gr_i[p]) masked_gr[p]->Draw("P");
+  };
   ave_canv->Write();
   ave_canv->Print(summarypdf,"pdf");
 
@@ -295,10 +326,13 @@ void mk_tree(const char * filename="master", Int_t month0=2, Int_t day0=20,
   char draw_style[16];
   strcpy(draw_style,"colztext");
   //for(Int_t c=1; c<5; c++) rdb_canv->GetPad(c)->SetLogz();
-  rdb_canv->cd(1); rdb_plot[0]->Draw(draw_style); unused_gr[0]->Draw("P");
-  rdb_canv->cd(3); rdb_plot[1]->Draw(draw_style); unused_gr[1]->Draw("P");
-  rdb_canv->cd(2); rdb_plot[2]->Draw(draw_style); unused_gr[2]->Draw("P");
-  rdb_canv->cd(4); rdb_plot[3]->Draw(draw_style); unused_gr[3]->Draw("P");
+  for(Int_t p=0; p<4; p++)
+  {
+    rdb_canv->cd(p+1);
+    rdb_plot[p]->Draw(draw_style);
+    if(unused_gr_i[p]) unused_gr[p]->Draw("P");
+    if(masked_gr_i[p]) masked_gr[p]->Draw("P");
+  };
   rdb_canv->Write();
   rdb_canv->Print(summarypdf,"pdf");
 
@@ -307,10 +341,13 @@ void mk_tree(const char * filename="master", Int_t month0=2, Int_t day0=20,
   char draw_style[16];
   strcpy(draw_style,"colztext");
   //for(Int_t c=1; c<5; c++) set_canv->GetPad(c)->SetLogz();
-  set_canv->cd(1); set_plot[0]->Draw(draw_style); unused_gr[0]->Draw("P");
-  set_canv->cd(3); set_plot[1]->Draw(draw_style); unused_gr[1]->Draw("P");
-  set_canv->cd(2); set_plot[2]->Draw(draw_style); unused_gr[2]->Draw("P");
-  set_canv->cd(4); set_plot[3]->Draw(draw_style); unused_gr[3]->Draw("P");
+  for(Int_t p=0; p<4; p++)
+  {
+    set_canv->cd(p+1);
+    set_plot[p]->Draw(draw_style);
+    if(unused_gr_i[p]) unused_gr[p]->Draw("P");
+    if(masked_gr_i[p]) masked_gr[p]->Draw("P");
+  };
   set_canv->Write();
   set_canv->Print(summarypdfR,"pdf");
 
