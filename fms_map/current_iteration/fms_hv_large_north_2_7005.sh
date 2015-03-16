@@ -88,7 +88,7 @@ echo -e "write (5,11) -1623\r"; sleep 2;
 echo -e "write (5,12) -1217\r"; sleep 2;
 echo -e "write (5,13) -1600\r"; sleep 2;
 echo -e "write (5,14) -1553\r"; sleep 2;
-echo -e "write (6,0) -1600\r"; sleep 2;
+echo -e "write (6,0) -1400\r"; sleep 2;
 echo -e "write (6,1) -1326\r"; sleep 2;
 echo -e "write (6,2) -1157\r"; sleep 2;
 echo -e "write (6,3) -1600\r"; sleep 2;

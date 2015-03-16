@@ -156,7 +156,7 @@ echo -e "write (11,0) -1334\r"; sleep 2;
 echo -e "write (11,1) -1256\r"; sleep 2;
 echo -e "write (11,2) -1371\r"; sleep 2;
 echo -e "write (11,3) -1183\r"; sleep 2;
-echo -e "write (11,4) -1338\r"; sleep 2;
+echo -e "write (11,4) -1138\r"; sleep 2;
 echo -e "write (11,5) -1283\r"; sleep 2;
 echo -e "write (11,6) -1309\r"; sleep 2;
 echo -e "write (11,9) -1363\r"; sleep 2;
@@ -206,7 +206,7 @@ echo -e "write (14,13) -1282\r"; sleep 2;
 echo -e "write (14,14) -1195\r"; sleep 2;
 echo -e "write (15,0) -1356\r"; sleep 2;
 echo -e "write (15,1) -1233\r"; sleep 2;
-echo -e "write (15,2) -1254\r"; sleep 2;
+echo -e "write (15,2) -1120\r"; sleep 2;
 
 sleep 2;
 echo -e "read (0-15,0-15)\r";
