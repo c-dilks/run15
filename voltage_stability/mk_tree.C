@@ -2,7 +2,7 @@ void mk_tree(const char * filename="master", Int_t month0=2, Int_t day0=20,
               Int_t timecut_low=0, Int_t timecut_high=0)
 {
   // list of channels to not plot in summary.pdf (so scales get set properly)
-  const Int_t N_MASK = 6;
+  const Int_t N_MASK = 10;
   Int_t mask[N_MASK][3]; // [count] [crate,slot,chan]
   Int_t ii=0;
   mask[ii][0]=7005; mask[ii][1]=13; mask[ii++][2]=0;  // not stacked
@@ -11,6 +11,10 @@ void mk_tree(const char * filename="master", Int_t month0=2, Int_t day0=20,
   mask[ii][0]=7006; mask[ii][1]=15; mask[ii++][2]=2;  // suppressed to 0 V
   mask[ii][0]=7007; mask[ii][1]=1;  mask[ii++][2]=15; // unused channel: setpoint=900V, but readback=~1V
   mask[ii][0]=7008; mask[ii][1]=4;  mask[ii++][2]=13; // suppressed to 0 V
+  mask[ii][0]=7005; mask[ii][1]=12;  mask[ii++][2]=4;
+  mask[ii][0]=7007; mask[ii][1]=0;  mask[ii++][2]=15;
+  mask[ii][0]=7007; mask[ii][1]=7;  mask[ii++][2]=2;
+  mask[ii][0]=7007; mask[ii][1]=7;  mask[ii++][2]=7;
 
 
 
