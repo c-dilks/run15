@@ -26,6 +26,9 @@
     c_inv++;
   };
 
+  TF1 * ff = new TF1("ff","pol3",0,250);
+  plot->Fit(ff,"","",0,250);
+
   TCanvas * c1 = new TCanvas("c1","c1",500,700);
   TMultiGraph * mg = new TMultiGraph();
   mg->Add(plot);
