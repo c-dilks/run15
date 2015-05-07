@@ -129,7 +129,7 @@ void draw_LED_resolutions(Int_t day=0)
     Shv_ub=0xFF+0x04;
     strcpy(extra_cuts,"gaus_sigma<gaus_mean && gaus_mean>10 && gaus_mean<3800");
   }
-  else if(day==49 || day==0)
+  else if(day==49 || day==112 || day==125 || day==0)
   {
     NUM=1;
     NUM_large = NUM;
