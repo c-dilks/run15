@@ -3,12 +3,13 @@ void draw()
   TFile * infile = new TFile("geotr.root","READ");
   TTree * tr = (TTree*) infile->Get("geotr");
   
-  Int_t nstb,row,col;
+  Int_t nstb,row,col,chan;
   char cell_type[32];
   char hvaddress_char[8];
   tr->SetBranchAddress("nstb",&nstb);
   tr->SetBranchAddress("row",&row);
   tr->SetBranchAddress("col",&col);
+  tr->SetBranchAddress("chan",&chan);
   tr->SetBranchAddress("cell_type",cell_type);
   tr->SetBranchAddress("hvaddress_char",hvaddress_char);
 
@@ -54,6 +55,9 @@ void draw()
   TH2F* small_hvchan=new TH2F("small_hvchan","motherboard channel",52,-98.6,98.6,52,-98.6,98.6);
   TH2F* small_hvaddress=new TH2F("small_hvaddress","base address (text = address integer)",52,-98.6,98.6,52,-98.6,98.6);
   TH2F* small_hvaddress_char=new TH2F("small_hvaddress_char","base address (text = address integer)",52,-98.6,98.6,52,-98.6,98.6);
+
+  TH2F* large_trg=new TH2F("large_trg","",34,-98.6,98.6,34,-98.6,98.6);
+  TH2F* small_trg=new TH2F("small_trg","",52,-98.6,98.6,52,-98.6,98.6);
 
 
   large_type->GetXaxis()->SetTitle(cell_type_legend);
@@ -131,6 +135,16 @@ void draw()
   tr->Project("small_hvchan","-3.8*(row-11.5):3.8*2*(nstb-3.5)*(col+.5)","(hvchan+0.01)*(nstb==3||nstb==4)");
   tr->Project("small_hvaddress","-3.8*(row-11.5):3.8*2*(nstb-3.5)*(col+.5)","hvaddress*(nstb==3||nstb==4)");
 
+
+  tr->Project("large_trg","-5.8*(row+0.5-17):5.8*2*(nstb-1.5)*(col+.5)",
+    "0*((nstb==1||nstb==2)&&qtslot!=11) + 2*((nstb==1||nstb==2)&&qtslot==11)");
+  tr->Project("small_trg","-3.8*(row-11.5):3.8*2*(nstb-3.5)*(col+.5)",
+    "0*(nstb==3||nstb==4)");
+  large_trg->SetMinimum(0);
+  small_trg->SetMinimum(0);
+  large_trg->SetMaximum(2);
+  small_trg->SetMaximum(2);
+
   /*
   Int_t binn;
   for(Int_t i=0; i<tr->GetEntries(); i++)
@@ -176,20 +190,36 @@ void draw()
     obox[1] = new TLine(12*3.8,12*3.8,12*3.8,-12*3.8);
     obox[2] = new TLine(12*3.8,-12*3.8,-12*3.8,-12*3.8);
     obox[3] = new TLine(-12*3.8,-12*3.8,-12*3.8,12*3.8);
+  TLine * obox2[4];
+    obox2[0] = new TLine(-8*5.8,8*5.8,8*5.8,8*5.8);
+    obox2[1] = new TLine(8*5.8,8*5.8,8*5.8,-8*5.8);
+    obox2[2] = new TLine(8*5.8,-8*5.8,-8*5.8,-8*5.8);
+    obox2[3] = new TLine(-8*5.8,-8*5.8,-8*5.8,8*5.8);
   char wname[32];
   vline->SetLineColor(kBlack);
   hline->SetLineColor(kBlack);
-  vline->SetLineWidth(2.5);
-  hline->SetLineWidth(2.5);
+  vline->SetLineWidth(4);
+  hline->SetLineWidth(4);
   short_vline->SetLineColor(kBlack);
   short_hline->SetLineColor(kBlack);
   short_vline->SetLineWidth(2.5);
   short_hline->SetLineWidth(2.5);
 
+  for(int ii=0; ii<4; ii++)
+  {
+    ibox[ii]->SetLineWidth(4);
+    obox[ii]->SetLineWidth(4);
+    obox2[ii]->SetLineWidth(4);
+  };
+
+
 
   // cell type
   Double_t row_map,col_map,type_weight;
+  Double_t xs[4][600][4]; // [nstb-1] [chan] [quadrant-1]
+  Double_t ys[4][600][4]; // [nstb-1] [chan] [quadrant-1]
   Int_t binn;
+  Double_t cell_size;
   for(Int_t i=0; i<tr->GetEntries(); i++)
   {
     tr->GetEntry(i);
@@ -197,19 +227,334 @@ void draw()
       if(!strcmp(cell_type,cell_type_def[tt])) type_weight=tt+1;
     if(nstb==1||nstb==2) 
     {
-      row_map = -5.8*(row+0.5-17);
-      col_map = 5.8*2*(nstb-1.5)*(col+0.5);
+      cell_size = 5.8;
+      row_map = -cell_size*(row+0.5-17);
+      col_map = cell_size*2*(nstb-1.5)*(col+0.5);
       binn = large_type->FindBin(col_map,row_map);
       large_type->SetBinContent(binn,type_weight);
     }
+
     else
     {
-      row_map = -3.8*(row-11.5);
-      col_map = 3.8*2*(nstb-3.5)*(col+0.5);
+      cell_size = 3.8;
+      row_map = -cell_size*(row-11.5);
+      col_map = cell_size*2*(nstb-3.5)*(col+0.5);
       binn = small_type->FindBin(col_map,row_map);
       small_type->SetBinContent(binn,type_weight);
     };
+
+    xs[nstb-1][chan][0] = col_map + (cell_size/2.0);
+    xs[nstb-1][chan][1] = col_map - (cell_size/2.0);
+    xs[nstb-1][chan][2] = xs[nstb-1][chan][1];
+    xs[nstb-1][chan][3] = xs[nstb-1][chan][0];
+
+    ys[nstb-1][chan][0] = row_map + (cell_size/2.0);
+    ys[nstb-1][chan][1] = ys[nstb-1][chan][0];
+    ys[nstb-1][chan][2] = row_map - (cell_size/2.0);
+    ys[nstb-1][chan][3] = ys[nstb-1][chan][2];
   };
+
+  
+  // trigger lines (e.g., between board sums)
+  TLine * trgl[100];
+  Int_t Ntrgl=0;
+
+  trgl[Ntrgl++] = new TLine(xs[0][18][0],ys[0][18][0],xs[0][137][3],ys[0][137][3]);
+  trgl[Ntrgl++] = new TLine(xs[0][21][1],ys[0][21][1],xs[0][140][2],ys[0][140][2]);
+  trgl[Ntrgl++] = new TLine(xs[0][25][1],ys[0][25][1],xs[0][144][2],ys[0][144][2]);
+  trgl[Ntrgl++] = new TLine(xs[0][10][2],ys[0][10][2],xs[0][1][3],ys[0][1][3]);
+  trgl[Ntrgl++] = new TLine(xs[0][63][1],ys[0][63][1],xs[0][80][2],ys[0][80][2]);
+  trgl[Ntrgl++] = new TLine(xs[0][99][1],ys[0][99][1],xs[0][94][0],ys[0][94][0]);
+  trgl[Ntrgl++] = new TLine(xs[0][169][1],ys[0][169][1],xs[0][162][0],ys[0][162][0]);
+  trgl[Ntrgl++] = new TLine(xs[0][237][1],ys[0][237][1],xs[0][230][0],ys[0][230][0]);
+  trgl[Ntrgl++] = new TLine(xs[0][305][1],ys[0][305][1],xs[0][298][0],ys[0][298][0]);
+  trgl[Ntrgl++] = new TLine(xs[0][136][0],ys[0][136][0],xs[0][459][3],ys[0][459][3]);
+  trgl[Ntrgl++] = new TLine(xs[0][373][1],ys[0][373][1],xs[0][366][0],ys[0][366][0]);
+  trgl[Ntrgl++] = new TLine(xs[0][441][1],ys[0][441][1],xs[0][434][0],ys[0][434][0]);
+  trgl[Ntrgl++] = new TLine(xs[0][507][1],ys[0][507][1],xs[0][502][0],ys[0][502][0]);
+  trgl[Ntrgl++] = new TLine(xs[0][434][0],ys[0][434][0],xs[0][553][3],ys[0][553][3]);
+  trgl[Ntrgl++] = new TLine(xs[0][506][0],ys[0][506][0],xs[0][523][3],ys[0][523][3]);
+  trgl[Ntrgl++] = new TLine(xs[0][430][0],ys[0][430][0],xs[0][549][3],ys[0][549][3]);
+  trgl[Ntrgl++] = new TLine(xs[0][426][0],ys[0][426][0],xs[0][545][3],ys[0][545][3]);
+  trgl[Ntrgl++] = new TLine(xs[0][571][1],ys[0][571][1],xs[0][562][0],ys[0][562][0]);
+
+  trgl[Ntrgl++] = new TLine(xs[1][21][0],ys[1][21][1],xs[1][140][3],ys[1][140][2]);
+  trgl[Ntrgl++] = new TLine(xs[1][25][0],ys[1][25][1],xs[1][144][3],ys[1][144][2]);
+  trgl[Ntrgl++] = new TLine(xs[1][10][3],ys[1][10][2],xs[1][1][2],ys[1][1][3]);
+  trgl[Ntrgl++] = new TLine(xs[1][63][0],ys[1][63][1],xs[1][80][3],ys[1][80][2]);
+  trgl[Ntrgl++] = new TLine(xs[1][99][0],ys[1][99][1],xs[1][94][1],ys[1][94][0]);
+  trgl[Ntrgl++] = new TLine(xs[1][169][0],ys[1][169][1],xs[1][162][1],ys[1][162][0]);
+  trgl[Ntrgl++] = new TLine(xs[1][237][0],ys[1][237][1],xs[1][230][1],ys[1][230][0]);
+  trgl[Ntrgl++] = new TLine(xs[1][305][0],ys[1][305][1],xs[1][298][1],ys[1][298][0]);
+  trgl[Ntrgl++] = new TLine(xs[1][136][1],ys[1][136][0],xs[1][459][2],ys[1][459][3]);
+  trgl[Ntrgl++] = new TLine(xs[1][373][0],ys[1][373][1],xs[1][366][1],ys[1][366][0]);
+  trgl[Ntrgl++] = new TLine(xs[1][441][0],ys[1][441][1],xs[1][434][1],ys[1][434][0]);
+  trgl[Ntrgl++] = new TLine(xs[1][507][0],ys[1][507][1],xs[1][502][1],ys[1][502][0]);
+  trgl[Ntrgl++] = new TLine(xs[1][434][1],ys[1][434][0],xs[1][553][2],ys[1][553][3]);
+  trgl[Ntrgl++] = new TLine(xs[1][506][1],ys[1][506][0],xs[1][523][2],ys[1][523][3]);
+  trgl[Ntrgl++] = new TLine(xs[1][430][1],ys[1][430][0],xs[1][549][2],ys[1][549][3]);
+  trgl[Ntrgl++] = new TLine(xs[1][571][0],ys[1][571][1],xs[1][562][1],ys[1][562][0]);
+
+  trgl[Ntrgl++] = new TLine(xs[2][1][0],ys[2][1][0],xs[2][73][3],ys[2][73][3]);
+  trgl[Ntrgl++] = new TLine(xs[2][4][1],ys[2][4][1],xs[2][76][2],ys[2][76][2]);
+  trgl[Ntrgl++] = new TLine(xs[2][60][1],ys[2][60][1],xs[2][53][0],ys[2][53][0]);
+  trgl[Ntrgl++] = new TLine(xs[2][108][1],ys[2][108][1],xs[2][102][0],ys[2][102][0]);
+  trgl[Ntrgl++] = new TLine(xs[2][156][1],ys[2][156][1],xs[2][150][0],ys[2][150][0]);
+  trgl[Ntrgl++] = new TLine(xs[2][204][1],ys[2][204][1],xs[2][198][0],ys[2][198][0]);
+  trgl[Ntrgl++] = new TLine(xs[2][252][1],ys[2][252][1],xs[2][245][0],ys[2][245][0]);
+  trgl[Ntrgl++] = new TLine(xs[2][208][1],ys[2][208][1],xs[2][280][2],ys[2][280][2]);
+  trgl[Ntrgl++] = new TLine(xs[2][205][0],ys[2][205][0],xs[2][277][3],ys[2][277][3]);
+
+  trgl[Ntrgl++] = new TLine(xs[3][4][0],ys[3][4][1],xs[3][76][3],ys[3][76][2]);
+  trgl[Ntrgl++] = new TLine(xs[3][60][0],ys[3][60][1],xs[3][53][1],ys[3][53][0]);
+  trgl[Ntrgl++] = new TLine(xs[3][108][0],ys[3][108][1],xs[3][102][1],ys[3][102][0]);
+  trgl[Ntrgl++] = new TLine(xs[3][156][0],ys[3][156][1],xs[3][150][1],ys[3][150][0]);
+  trgl[Ntrgl++] = new TLine(xs[3][204][0],ys[3][204][1],xs[3][198][1],ys[3][198][0]);
+  trgl[Ntrgl++] = new TLine(xs[3][252][0],ys[3][252][1],xs[3][245][1],ys[3][245][0]);
+  trgl[Ntrgl++] = new TLine(xs[3][208][0],ys[3][208][1],xs[3][280][3],ys[3][280][2]);
+
+  for(int ii=0; ii<Ntrgl; ii++)
+  {
+    trgl[ii]->SetLineWidth(3);
+    trgl[ii]->SetLineColor(kBlack);
+  };
+
+
+  // outer border lines
+  TLine * obl[100];
+  Int_t Nobl=0;
+
+  obl[Nobl++] = new TLine(xs[0][1][0],ys[0][1][0],xs[0][10][1],ys[0][10][1]);
+  obl[Nobl++] = new TLine(xs[0][10][1],ys[0][10][1],xs[0][10][2],ys[0][10][2]);
+  obl[Nobl++] = new TLine(xs[0][28][0],ys[0][28][0],xs[0][28][1],ys[0][28][1]);
+  obl[Nobl++] = new TLine(xs[0][28][1],ys[0][28][1],xs[0][28][2],ys[0][28][2]);
+  obl[Nobl++] = new TLine(xs[0][46][0],ys[0][46][0],xs[0][46][1],ys[0][46][1]);
+  obl[Nobl++] = new TLine(xs[0][46][1],ys[0][46][1],xs[0][46][2],ys[0][46][2]);
+  obl[Nobl++] = new TLine(xs[0][64][0],ys[0][64][0],xs[0][64][1],ys[0][64][1]);
+  obl[Nobl++] = new TLine(xs[0][64][1],ys[0][64][1],xs[0][64][2],ys[0][64][2]);
+  obl[Nobl++] = new TLine(xs[0][82][0],ys[0][82][0],xs[0][82][1],ys[0][82][1]);
+  obl[Nobl++] = new TLine(xs[0][82][1],ys[0][82][1],xs[0][82][2],ys[0][82][2]);
+  obl[Nobl++] = new TLine(xs[0][100][0],ys[0][100][0],xs[0][100][1],ys[0][100][1]);
+  obl[Nobl++] = new TLine(xs[0][100][1],ys[0][100][1],xs[0][100][2],ys[0][100][2]);
+  obl[Nobl++] = new TLine(xs[0][118][0],ys[0][118][0],xs[0][118][1],ys[0][118][1]);
+  obl[Nobl++] = new TLine(xs[0][118][1],ys[0][118][1],xs[0][118][2],ys[0][118][2]);
+  obl[Nobl++] = new TLine(xs[0][136][0],ys[0][136][0],xs[0][136][1],ys[0][136][1]);
+  obl[Nobl++] = new TLine(xs[0][136][1],ys[0][136][1],xs[0][459][2],ys[0][459][2]);
+  obl[Nobl++] = new TLine(xs[0][459][2],ys[0][459][2],xs[0][459][3],ys[0][459][3]);
+  obl[Nobl++] = new TLine(xs[0][475][1],ys[0][475][1],xs[0][475][2],ys[0][475][2]);
+  obl[Nobl++] = new TLine(xs[0][475][2],ys[0][475][2],xs[0][475][3],ys[0][475][3]);
+  obl[Nobl++] = new TLine(xs[0][491][1],ys[0][491][1],xs[0][491][2],ys[0][491][2]);
+  obl[Nobl++] = new TLine(xs[0][491][2],ys[0][491][2],xs[0][491][3],ys[0][491][3]);
+  obl[Nobl++] = new TLine(xs[0][507][1],ys[0][507][1],xs[0][507][2],ys[0][507][2]);
+  obl[Nobl++] = new TLine(xs[0][507][2],ys[0][507][2],xs[0][507][3],ys[0][507][3]);
+  obl[Nobl++] = new TLine(xs[0][523][1],ys[0][523][1],xs[0][523][2],ys[0][523][2]);
+  obl[Nobl++] = new TLine(xs[0][523][2],ys[0][523][2],xs[0][523][3],ys[0][523][3]);
+  obl[Nobl++] = new TLine(xs[0][539][1],ys[0][539][1],xs[0][539][2],ys[0][539][2]);
+  obl[Nobl++] = new TLine(xs[0][539][2],ys[0][539][2],xs[0][539][3],ys[0][539][3]);
+  obl[Nobl++] = new TLine(xs[0][555][1],ys[0][555][1],xs[0][555][2],ys[0][555][2]);
+  obl[Nobl++] = new TLine(xs[0][555][2],ys[0][555][2],xs[0][555][3],ys[0][555][3]);
+  obl[Nobl++] = new TLine(xs[0][571][1],ys[0][571][1],xs[0][571][2],ys[0][571][2]);
+  obl[Nobl++] = new TLine(xs[0][571][2],ys[0][571][2],xs[0][562][3],ys[0][562][3]);
+
+  obl[Nobl++] = new TLine(xs[1][1][1],ys[1][1][0],xs[1][10][0],ys[1][10][1]);
+  obl[Nobl++] = new TLine(xs[1][10][0],ys[1][10][1],xs[1][10][3],ys[1][10][2]);
+  obl[Nobl++] = new TLine(xs[1][28][1],ys[1][28][0],xs[1][28][0],ys[1][28][1]);
+  obl[Nobl++] = new TLine(xs[1][28][0],ys[1][28][1],xs[1][28][3],ys[1][28][2]);
+  obl[Nobl++] = new TLine(xs[1][46][1],ys[1][46][0],xs[1][46][0],ys[1][46][1]);
+  obl[Nobl++] = new TLine(xs[1][46][0],ys[1][46][1],xs[1][46][3],ys[1][46][2]);
+  obl[Nobl++] = new TLine(xs[1][64][1],ys[1][64][0],xs[1][64][0],ys[1][64][1]);
+  obl[Nobl++] = new TLine(xs[1][64][0],ys[1][64][1],xs[1][64][3],ys[1][64][2]);
+  obl[Nobl++] = new TLine(xs[1][82][1],ys[1][82][0],xs[1][82][0],ys[1][82][1]);
+  obl[Nobl++] = new TLine(xs[1][82][0],ys[1][82][1],xs[1][82][3],ys[1][82][2]);
+  obl[Nobl++] = new TLine(xs[1][100][1],ys[1][100][0],xs[1][100][0],ys[1][100][1]);
+  obl[Nobl++] = new TLine(xs[1][100][0],ys[1][100][1],xs[1][100][3],ys[1][100][2]);
+  obl[Nobl++] = new TLine(xs[1][118][1],ys[1][118][0],xs[1][118][0],ys[1][118][1]);
+  obl[Nobl++] = new TLine(xs[1][118][0],ys[1][118][1],xs[1][118][3],ys[1][118][2]);
+  obl[Nobl++] = new TLine(xs[1][136][1],ys[1][136][0],xs[1][136][0],ys[1][136][1]);
+  obl[Nobl++] = new TLine(xs[1][136][0],ys[1][136][1],xs[1][459][3],ys[1][459][2]);
+  obl[Nobl++] = new TLine(xs[1][459][3],ys[1][459][2],xs[1][459][2],ys[1][459][3]);
+  obl[Nobl++] = new TLine(xs[1][475][0],ys[1][475][1],xs[1][475][3],ys[1][475][2]);
+  obl[Nobl++] = new TLine(xs[1][475][3],ys[1][475][2],xs[1][475][2],ys[1][475][3]);
+  obl[Nobl++] = new TLine(xs[1][491][0],ys[1][491][1],xs[1][491][3],ys[1][491][2]);
+  obl[Nobl++] = new TLine(xs[1][491][3],ys[1][491][2],xs[1][491][2],ys[1][491][3]);
+  obl[Nobl++] = new TLine(xs[1][507][0],ys[1][507][1],xs[1][507][3],ys[1][507][2]);
+  obl[Nobl++] = new TLine(xs[1][507][3],ys[1][507][2],xs[1][507][2],ys[1][507][3]);
+  obl[Nobl++] = new TLine(xs[1][523][0],ys[1][523][1],xs[1][523][3],ys[1][523][2]);
+  obl[Nobl++] = new TLine(xs[1][523][3],ys[1][523][2],xs[1][523][2],ys[1][523][3]);
+  obl[Nobl++] = new TLine(xs[1][539][0],ys[1][539][1],xs[1][539][3],ys[1][539][2]);
+  obl[Nobl++] = new TLine(xs[1][539][3],ys[1][539][2],xs[1][539][2],ys[1][539][3]);
+  obl[Nobl++] = new TLine(xs[1][555][0],ys[1][555][1],xs[1][555][3],ys[1][555][2]);
+  obl[Nobl++] = new TLine(xs[1][555][3],ys[1][555][2],xs[1][555][2],ys[1][555][3]);
+  obl[Nobl++] = new TLine(xs[1][571][0],ys[1][571][1],xs[1][571][3],ys[1][571][2]);
+  obl[Nobl++] = new TLine(xs[1][571][3],ys[1][571][2],xs[1][562][2],ys[1][562][3]);
+
+  for(int ii=0; ii<Nobl; ii++)
+  {
+    obl[ii]->SetLineWidth(4);
+    obl[ii]->SetLineColor(kBlack);
+  };
+
+
+
+  // dotted lines
+  TLine * dott[200];
+  Int_t Ndott=0;
+
+  dott[Ndott++] = new TLine(xs[0][18][1],ys[0][18][1],xs[0][137][2],ys[0][137][2]);
+  dott[Ndott++] = new TLine(xs[0][19][1],ys[0][19][1],xs[0][138][2],ys[0][138][2]);
+  dott[Ndott++] = new TLine(xs[0][20][1],ys[0][20][1],xs[0][139][2],ys[0][139][2]);
+  dott[Ndott++] = new TLine(xs[0][22][1],ys[0][22][1],xs[0][141][2],ys[0][141][2]);
+  dott[Ndott++] = new TLine(xs[0][23][1],ys[0][23][1],xs[0][142][2],ys[0][142][2]);
+  dott[Ndott++] = new TLine(xs[0][24][1],ys[0][24][1],xs[0][143][2],ys[0][143][2]);
+  dott[Ndott++] = new TLine(xs[0][426][1],ys[0][426][1],xs[0][545][2],ys[0][545][2]);
+  dott[Ndott++] = new TLine(xs[0][427][1],ys[0][427][1],xs[0][546][2],ys[0][546][2]);
+  dott[Ndott++] = new TLine(xs[0][428][1],ys[0][428][1],xs[0][547][2],ys[0][547][2]);
+  dott[Ndott++] = new TLine(xs[0][430][1],ys[0][430][1],xs[0][549][2],ys[0][549][2]);
+  dott[Ndott++] = new TLine(xs[0][431][1],ys[0][431][1],xs[0][550][2],ys[0][550][2]);
+  dott[Ndott++] = new TLine(xs[0][432][1],ys[0][432][1],xs[0][551][2],ys[0][551][2]);
+  dott[Ndott++] = new TLine(xs[0][26][3],ys[0][26][3],xs[0][28][2],ys[0][28][2]);
+  dott[Ndott++] = new TLine(xs[0][43][3],ys[0][43][3],xs[0][46][2],ys[0][46][2]);
+  dott[Ndott++] = new TLine(xs[0][60][3],ys[0][60][3],xs[0][63][2],ys[0][63][2]);
+  dott[Ndott++] = new TLine(xs[0][94][3],ys[0][94][3],xs[0][100][2],ys[0][100][2]);
+  dott[Ndott++] = new TLine(xs[0][111][3],ys[0][111][3],xs[0][118][2],ys[0][118][2]);
+  dott[Ndott++] = new TLine(xs[0][128][3],ys[0][128][3],xs[0][135][2],ys[0][135][2]);
+  dott[Ndott++] = new TLine(xs[0][162][3],ys[0][162][3],xs[0][169][2],ys[0][169][2]);
+  dott[Ndott++] = new TLine(xs[0][179][3],ys[0][179][3],xs[0][186][2],ys[0][186][2]);
+  dott[Ndott++] = new TLine(xs[0][196][3],ys[0][196][3],xs[0][203][2],ys[0][203][2]);
+  dott[Ndott++] = new TLine(xs[0][230][3],ys[0][230][3],xs[0][237][2],ys[0][237][2]);
+  dott[Ndott++] = new TLine(xs[0][247][3],ys[0][247][3],xs[0][254][2],ys[0][254][2]);
+  dott[Ndott++] = new TLine(xs[0][264][3],ys[0][264][3],xs[0][271][2],ys[0][271][2]);
+  dott[Ndott++] = new TLine(xs[0][298][3],ys[0][298][3],xs[0][305][2],ys[0][305][2]);
+  dott[Ndott++] = new TLine(xs[0][315][3],ys[0][315][3],xs[0][322][2],ys[0][322][2]);
+  dott[Ndott++] = new TLine(xs[0][332][3],ys[0][332][3],xs[0][339][2],ys[0][339][2]);
+  dott[Ndott++] = new TLine(xs[0][366][3],ys[0][366][3],xs[0][373][2],ys[0][373][2]);
+  dott[Ndott++] = new TLine(xs[0][383][3],ys[0][383][3],xs[0][390][2],ys[0][390][2]);
+  dott[Ndott++] = new TLine(xs[0][400][3],ys[0][400][3],xs[0][407][2],ys[0][407][2]);
+  dott[Ndott++] = new TLine(xs[0][434][3],ys[0][434][3],xs[0][441][2],ys[0][441][2]);
+  dott[Ndott++] = new TLine(xs[0][451][3],ys[0][451][3],xs[0][458][2],ys[0][458][2]);
+  dott[Ndott++] = new TLine(xs[0][468][3],ys[0][468][3],xs[0][474][2],ys[0][474][2]);
+  dott[Ndott++] = new TLine(xs[0][502][3],ys[0][502][3],xs[0][505][2],ys[0][505][2]);
+  dott[Ndott++] = new TLine(xs[0][519][3],ys[0][519][3],xs[0][522][2],ys[0][522][2]);
+  dott[Ndott++] = new TLine(xs[0][536][3],ys[0][536][3],xs[0][538][2],ys[0][538][2]);
+
+  dott[Ndott++] = new TLine(xs[1][18][0],ys[1][18][1],xs[1][137][3],ys[1][137][2]);
+  dott[Ndott++] = new TLine(xs[1][19][0],ys[1][19][1],xs[1][138][3],ys[1][138][2]);
+  dott[Ndott++] = new TLine(xs[1][20][0],ys[1][20][1],xs[1][139][3],ys[1][139][2]);
+  dott[Ndott++] = new TLine(xs[1][22][0],ys[1][22][1],xs[1][141][3],ys[1][141][2]);
+  dott[Ndott++] = new TLine(xs[1][23][0],ys[1][23][1],xs[1][142][3],ys[1][142][2]);
+  dott[Ndott++] = new TLine(xs[1][24][0],ys[1][24][1],xs[1][143][3],ys[1][143][2]);
+  dott[Ndott++] = new TLine(xs[1][426][0],ys[1][426][1],xs[1][545][3],ys[1][545][2]);
+  dott[Ndott++] = new TLine(xs[1][427][0],ys[1][427][1],xs[1][546][3],ys[1][546][2]);
+  dott[Ndott++] = new TLine(xs[1][428][0],ys[1][428][1],xs[1][547][3],ys[1][547][2]);
+  dott[Ndott++] = new TLine(xs[1][430][0],ys[1][430][1],xs[1][549][3],ys[1][549][2]);
+  dott[Ndott++] = new TLine(xs[1][431][0],ys[1][431][1],xs[1][550][3],ys[1][550][2]);
+  dott[Ndott++] = new TLine(xs[1][432][0],ys[1][432][1],xs[1][551][3],ys[1][551][2]);
+  dott[Ndott++] = new TLine(xs[1][26][2],ys[1][26][3],xs[1][28][3],ys[1][28][2]);
+  dott[Ndott++] = new TLine(xs[1][43][2],ys[1][43][3],xs[1][46][3],ys[1][46][2]);
+  dott[Ndott++] = new TLine(xs[1][60][2],ys[1][60][3],xs[1][63][3],ys[1][63][2]);
+  dott[Ndott++] = new TLine(xs[1][94][2],ys[1][94][3],xs[1][100][3],ys[1][100][2]);
+  dott[Ndott++] = new TLine(xs[1][111][2],ys[1][111][3],xs[1][118][3],ys[1][118][2]);
+  dott[Ndott++] = new TLine(xs[1][128][2],ys[1][128][3],xs[1][135][3],ys[1][135][2]);
+  dott[Ndott++] = new TLine(xs[1][162][2],ys[1][162][3],xs[1][169][3],ys[1][169][2]);
+  dott[Ndott++] = new TLine(xs[1][179][2],ys[1][179][3],xs[1][186][3],ys[1][186][2]);
+  dott[Ndott++] = new TLine(xs[1][196][2],ys[1][196][3],xs[1][203][3],ys[1][203][2]);
+  dott[Ndott++] = new TLine(xs[1][230][2],ys[1][230][3],xs[1][237][3],ys[1][237][2]);
+  dott[Ndott++] = new TLine(xs[1][247][2],ys[1][247][3],xs[1][254][3],ys[1][254][2]);
+  dott[Ndott++] = new TLine(xs[1][264][2],ys[1][264][3],xs[1][271][3],ys[1][271][2]);
+  dott[Ndott++] = new TLine(xs[1][298][2],ys[1][298][3],xs[1][305][3],ys[1][305][2]);
+  dott[Ndott++] = new TLine(xs[1][315][2],ys[1][315][3],xs[1][322][3],ys[1][322][2]);
+  dott[Ndott++] = new TLine(xs[1][332][2],ys[1][332][3],xs[1][339][3],ys[1][339][2]);
+  dott[Ndott++] = new TLine(xs[1][366][2],ys[1][366][3],xs[1][373][3],ys[1][373][2]);
+  dott[Ndott++] = new TLine(xs[1][383][2],ys[1][383][3],xs[1][390][3],ys[1][390][2]);
+  dott[Ndott++] = new TLine(xs[1][400][2],ys[1][400][3],xs[1][407][3],ys[1][407][2]);
+  dott[Ndott++] = new TLine(xs[1][434][2],ys[1][434][3],xs[1][441][3],ys[1][441][2]);
+  dott[Ndott++] = new TLine(xs[1][451][2],ys[1][451][3],xs[1][458][3],ys[1][458][2]);
+  dott[Ndott++] = new TLine(xs[1][468][2],ys[1][468][3],xs[1][474][3],ys[1][474][2]);
+  dott[Ndott++] = new TLine(xs[1][502][2],ys[1][502][3],xs[1][505][3],ys[1][505][2]);
+  dott[Ndott++] = new TLine(xs[1][519][2],ys[1][519][3],xs[1][522][3],ys[1][522][2]);
+  dott[Ndott++] = new TLine(xs[1][536][2],ys[1][536][3],xs[1][538][3],ys[1][538][2]);
+
+  dott[Ndott++] = new TLine(xs[2][1][1],ys[2][1][1],xs[2][73][2],ys[2][73][2]);
+  dott[Ndott++] = new TLine(xs[2][2][1],ys[2][2][1],xs[2][74][2],ys[2][74][2]);
+  dott[Ndott++] = new TLine(xs[2][3][1],ys[2][3][1],xs[2][75][2],ys[2][75][2]);
+  dott[Ndott++] = new TLine(xs[2][205][1],ys[2][205][1],xs[2][277][2],ys[2][277][2]);
+  dott[Ndott++] = new TLine(xs[2][206][1],ys[2][206][1],xs[2][278][2],ys[2][278][2]);
+  dott[Ndott++] = new TLine(xs[2][207][1],ys[2][207][1],xs[2][279][2],ys[2][279][2]);
+  dott[Ndott++] = new TLine(xs[2][5][3],ys[2][5][3],xs[2][12][2],ys[2][12][2]);
+  dott[Ndott++] = new TLine(xs[2][17][3],ys[2][17][3],xs[2][24][2],ys[2][24][2]);
+  dott[Ndott++] = new TLine(xs[2][29][3],ys[2][29][3],xs[2][36][2],ys[2][36][2]);
+  dott[Ndott++] = new TLine(xs[2][53][3],ys[2][53][3],xs[2][60][2],ys[2][60][2]);
+  dott[Ndott++] = new TLine(xs[2][65][3],ys[2][65][3],xs[2][72][2],ys[2][72][2]);
+  dott[Ndott++] = new TLine(xs[2][78][3],ys[2][78][3],xs[2][84][2],ys[2][84][2]);
+  dott[Ndott++] = new TLine(xs[2][102][3],ys[2][102][3],xs[2][108][2],ys[2][108][2]);
+  dott[Ndott++] = new TLine(xs[2][114][3],ys[2][114][3],xs[2][120][2],ys[2][120][2]);
+  dott[Ndott++] = new TLine(xs[2][126][3],ys[2][126][3],xs[2][132][2],ys[2][132][2]);
+  dott[Ndott++] = new TLine(xs[2][150][3],ys[2][150][3],xs[2][156][2],ys[2][156][2]);
+  dott[Ndott++] = new TLine(xs[2][162][3],ys[2][162][3],xs[2][168][2],ys[2][168][2]);
+  dott[Ndott++] = new TLine(xs[2][174][3],ys[2][174][3],xs[2][180][2],ys[2][180][2]);
+  dott[Ndott++] = new TLine(xs[2][198][3],ys[2][198][3],xs[2][204][2],ys[2][204][2]);
+  dott[Ndott++] = new TLine(xs[2][209][3],ys[2][209][3],xs[2][216][2],ys[2][216][2]);
+  dott[Ndott++] = new TLine(xs[2][221][3],ys[2][221][3],xs[2][228][2],ys[2][228][2]);
+  dott[Ndott++] = new TLine(xs[2][245][3],ys[2][245][3],xs[2][252][2],ys[2][252][2]);
+  dott[Ndott++] = new TLine(xs[2][257][3],ys[2][257][3],xs[2][264][2],ys[2][264][2]);
+  dott[Ndott++] = new TLine(xs[2][269][3],ys[2][269][3],xs[2][276][2],ys[2][276][2]);
+
+  dott[Ndott++] = new TLine(xs[3][1][0],ys[3][1][1],xs[3][73][3],ys[3][73][2]);
+  dott[Ndott++] = new TLine(xs[3][2][0],ys[3][2][1],xs[3][74][3],ys[3][74][2]);
+  dott[Ndott++] = new TLine(xs[3][3][0],ys[3][3][1],xs[3][75][3],ys[3][75][2]);
+  dott[Ndott++] = new TLine(xs[3][205][0],ys[3][205][1],xs[3][277][3],ys[3][277][2]);
+  dott[Ndott++] = new TLine(xs[3][206][0],ys[3][206][1],xs[3][278][3],ys[3][278][2]);
+  dott[Ndott++] = new TLine(xs[3][207][0],ys[3][207][1],xs[3][279][3],ys[3][279][2]);
+  dott[Ndott++] = new TLine(xs[3][5][2],ys[3][5][3],xs[3][12][3],ys[3][12][2]);
+  dott[Ndott++] = new TLine(xs[3][17][2],ys[3][17][3],xs[3][24][3],ys[3][24][2]);
+  dott[Ndott++] = new TLine(xs[3][29][2],ys[3][29][3],xs[3][36][3],ys[3][36][2]);
+  dott[Ndott++] = new TLine(xs[3][53][2],ys[3][53][3],xs[3][60][3],ys[3][60][2]);
+  dott[Ndott++] = new TLine(xs[3][65][2],ys[3][65][3],xs[3][72][3],ys[3][72][2]);
+  dott[Ndott++] = new TLine(xs[3][78][2],ys[3][78][3],xs[3][84][3],ys[3][84][2]);
+  dott[Ndott++] = new TLine(xs[3][102][2],ys[3][102][3],xs[3][108][3],ys[3][108][2]);
+  dott[Ndott++] = new TLine(xs[3][114][2],ys[3][114][3],xs[3][120][3],ys[3][120][2]);
+  dott[Ndott++] = new TLine(xs[3][126][2],ys[3][126][3],xs[3][132][3],ys[3][132][2]);
+  dott[Ndott++] = new TLine(xs[3][150][2],ys[3][150][3],xs[3][156][3],ys[3][156][2]);
+  dott[Ndott++] = new TLine(xs[3][162][2],ys[3][162][3],xs[3][168][3],ys[3][168][2]);
+  dott[Ndott++] = new TLine(xs[3][174][2],ys[3][174][3],xs[3][180][3],ys[3][180][2]);
+  dott[Ndott++] = new TLine(xs[3][198][2],ys[3][198][3],xs[3][204][3],ys[3][204][2]);
+  dott[Ndott++] = new TLine(xs[3][209][2],ys[3][209][3],xs[3][216][3],ys[3][216][2]);
+  dott[Ndott++] = new TLine(xs[3][221][2],ys[3][221][3],xs[3][228][3],ys[3][228][2]);
+  dott[Ndott++] = new TLine(xs[3][245][2],ys[3][245][3],xs[3][252][3],ys[3][252][2]);
+  dott[Ndott++] = new TLine(xs[3][257][2],ys[3][257][3],xs[3][264][3],ys[3][264][2]);
+  dott[Ndott++] = new TLine(xs[3][269][2],ys[3][269][3],xs[3][276][3],ys[3][276][2]);
+
+  for(int ii=0; ii<Ndott; ii++)
+  {
+    dott[ii]->SetLineWidth(2);
+    dott[ii]->SetLineColor(kGray);
+    dott[ii]->SetLineStyle(2);
+  };
+
+
+
+
+  // eta circles
+  TEllipse * etac[20];
+  Int_t Netac = 0;
+
+  etac[Netac++] = new TEllipse(0,0,XofEta(2.65));  // minimum eta
+  //etac[Netac++] = new TEllipse(0,0,XofEta(3.105)); // corner of l/s boundary
+  etac[Netac++] = new TEllipse(0,0,XofEta(3.28)); // average eta of l/s boundary
+  //etac[Netac++] = new TEllipse(0,0,XofEta(3.45)); // side of l/s boundary
+  etac[Netac++] = new TEllipse(0,0,XofEta(3.9)); // maximum eta
+
+  for(int ii=0; ii<Netac; ii++)
+  {
+    etac[ii]->SetLineColor(kBlue);
+    etac[ii]->SetFillColorAlpha(kWhite,0);
+    etac[ii]->SetLineWidth(3);
+  };
+  etac[0]->SetLineColor(kRed); etac[0]->SetLineWidth(5);
+  etac[Netac-1]->SetLineColor(kRed); etac[Netac-1]->SetLineWidth(5);
+
+
+
 
 
   // draw
@@ -468,4 +813,39 @@ void draw()
   };
   small_hvaddress_canv->SetGrid(0,0);
   small_hvaddress_canv->Write();
+
+
+  gStyle->SetOptStat(0);
+  TCanvas * trg_canv = new TCanvas("trg_canv","trg_canv",2000,2000); 
+  large_trg->GetXaxis()->SetRangeUser(-100,100);
+  large_trg->GetYaxis()->SetRangeUser(-100,100);
+  large_trg->Draw("acol");
+  small_trg->Draw("acolsame");
+  //largetxt->Draw("textsame");
+  //smalltxt->Draw("textsame");
+  //
+  for(int ii=0; ii<Ndott; ii++) dott[ii]->Draw();
+  for(int ii=0; ii<Ntrgl; ii++) trgl[ii]->Draw();
+  //vline->Draw();
+  //hline->Draw();
+  for(Int_t ii=0; ii<4; ii++) 
+  {
+    //svline[ii]->Draw();
+    //shline[ii]->Draw();
+    ibox[ii]->Draw();
+    obox[ii]->Draw();
+    obox2[ii]->Draw();
+  };
+  for(int ii=0; ii<Nobl; ii++) obl[ii]->Draw();
+  for(int ii=0; ii<Netac; ii++) etac[ii]->Draw();
+
+  trg_canv->SetGrid(0,0);
+  trg_canv->Write();
+  trg_canv->Print("trig_pic.png","png");
+};
+
+
+Double_t XofEta(Double_t eta0)
+{
+  return 720 * tan(2*atan2(exp(-1*eta0),1));
 };
