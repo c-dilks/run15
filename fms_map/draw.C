@@ -3,7 +3,7 @@ void draw()
   TFile * infile = new TFile("geotr.root","READ");
   TTree * tr = (TTree*) infile->Get("geotr");
   
-  Int_t nstb,row,col,chan;
+  Int_t nstb,row,col,chan,qtslot;
   char cell_type[32];
   char hvaddress_char[8];
   tr->SetBranchAddress("nstb",&nstb);
@@ -12,6 +12,7 @@ void draw()
   tr->SetBranchAddress("chan",&chan);
   tr->SetBranchAddress("cell_type",cell_type);
   tr->SetBranchAddress("hvaddress_char",hvaddress_char);
+  tr->SetBranchAddress("qtslot",&qtslot);
 
   // cell types
   const Int_t NUM_TYPES=6;
@@ -58,6 +59,8 @@ void draw()
 
   TH2F* large_trg=new TH2F("large_trg","",34,-98.6,98.6,34,-98.6,98.6);
   TH2F* small_trg=new TH2F("small_trg","",52,-98.6,98.6,52,-98.6,98.6);
+  TH2F* large_sel=new TH2F("large_sel","",34,-98.6,98.6,34,-98.6,98.6);
+  TH2F* small_sel=new TH2F("small_sel","",52,-98.6,98.6,52,-98.6,98.6);
 
 
   large_type->GetXaxis()->SetTitle(cell_type_legend);
@@ -136,10 +139,21 @@ void draw()
   tr->Project("small_hvaddress","-3.8*(row-11.5):3.8*2*(nstb-3.5)*(col+.5)","hvaddress*(nstb==3||nstb==4)");
 
 
-  tr->Project("large_trg","-5.8*(row+0.5-17):5.8*2*(nstb-1.5)*(col+.5)",
+  // for coloring non-trigger cells
+  tr->Project("large_sel","-5.8*(row+0.5-17):5.8*2*(nstb-1.5)*(col+.5)",
     "0*((nstb==1||nstb==2)&&qtslot!=11) + 2*((nstb==1||nstb==2)&&qtslot==11)");
-  tr->Project("small_trg","-3.8*(row-11.5):3.8*2*(nstb-3.5)*(col+.5)",
+  tr->Project("small_sel","-3.8*(row-11.5):3.8*2*(nstb-3.5)*(col+.5)",
     "0*(nstb==3||nstb==4)");
+  large_sel->SetMinimum(0);
+  small_trg->SetMinimum(0);
+  large_sel->SetMaximum(2);
+  small_trg->SetMaximum(2);
+
+  // for drawing boxes around each cell
+  tr->Project("large_trg","-5.8*(row+0.5-17):5.8*2*(nstb-1.5)*(col+.5)",
+    "2*(nstb==1||nstb==2)");
+  tr->Project("small_trg","-3.8*(row-11.5):3.8*2*(nstb-3.5)*(col+.5)",
+    "2*(nstb==3||nstb==4)");
   large_trg->SetMinimum(0);
   small_trg->SetMinimum(0);
   large_trg->SetMaximum(2);
@@ -315,7 +329,7 @@ void draw()
 
   for(int ii=0; ii<Ntrgl; ii++)
   {
-    trgl[ii]->SetLineWidth(3);
+    trgl[ii]->SetLineWidth(4);
     trgl[ii]->SetLineColor(kBlack);
   };
 
@@ -527,7 +541,7 @@ void draw()
   for(int ii=0; ii<Ndott; ii++)
   {
     dott[ii]->SetLineWidth(2);
-    dott[ii]->SetLineColor(kGray);
+    dott[ii]->SetLineColor(kGray+2);
     dott[ii]->SetLineStyle(2);
   };
 
@@ -538,23 +552,53 @@ void draw()
   TEllipse * etac[20];
   Int_t Netac = 0;
 
-  etac[Netac++] = new TEllipse(0,0,XofEta(2.65));  // minimum eta
+  // eta rings for analysis
+  //etac[Netac++] = new TEllipse(0,0,XofEta(2.65));  // minimum eta
   //etac[Netac++] = new TEllipse(0,0,XofEta(3.105)); // corner of l/s boundary
-  etac[Netac++] = new TEllipse(0,0,XofEta(3.28)); // average eta of l/s boundary
+  //etac[Netac++] = new TEllipse(0,0,XofEta(3.28)); // average eta of l/s boundary
   //etac[Netac++] = new TEllipse(0,0,XofEta(3.45)); // side of l/s boundary
-  etac[Netac++] = new TEllipse(0,0,XofEta(3.9)); // maximum eta
+  //etac[Netac++] = new TEllipse(0,0,XofEta(3.9)); // maximum eta
+  
+  etac[Netac++] = new TEllipse(0,0,XofEta(2.6));
+  etac[Netac++] = new TEllipse(0,0,XofEta(3.0));
+  etac[Netac++] = new TEllipse(0,0,XofEta(3.5));
+  etac[Netac++] = new TEllipse(0,0,XofEta(4.0));
 
   for(int ii=0; ii<Netac; ii++)
   {
-    etac[ii]->SetLineColor(kBlue);
+    etac[ii]->SetLineColor(kRed);
     etac[ii]->SetFillColorAlpha(kWhite,0);
-    etac[ii]->SetLineWidth(3);
+    etac[ii]->SetLineWidth(6);
   };
-  etac[0]->SetLineColor(kRed); etac[0]->SetLineWidth(5);
-  etac[Netac-1]->SetLineColor(kRed); etac[Netac-1]->SetLineWidth(5);
+  //etac[0]->SetLineColor(kRed); etac[0]->SetLineWidth(7);
+  //etac[Netac-1]->SetLineColor(kRed); etac[Netac-1]->SetLineWidth(7);
 
 
-
+  
+  // draw JP diagrams
+  TH2F* small_jptb=new TH2F("small_jptb","",52,-98.6,98.6,52,-98.6,98.6);
+  TH2F* large_jptb=new TH2F("large_jptb","",34,-98.6,98.6,34,-98.6,98.6);
+  TH2F* small_jpm=new TH2F("small_jpm","",52,-98.6,98.6,52,-98.6,98.6);
+  TH2F* large_jpm=new TH2F("large_jpm","",34,-98.6,98.6,34,-98.6,98.6);
+  Int_t jpstb,jpsm,bn;
+  for(int x=0; x<tr->GetEntries(); x++)
+  {
+    tr->GetEntry(x);
+    jpstb = JPTB(nstb,chan,qtslot);
+    jpsm = JPM(nstb,chan,qtslot);
+    if(nstb==1 || nstb==2)
+    {
+      bn = large_qtslot->FindBin(5.8*2*(nstb-1.5)*(col+.5), -5.8*(row+0.5-17));
+      if(jpstb>0) large_jptb->SetBinContent(bn,jpstb);
+      if(jpsm>0) large_jpm->SetBinContent(bn,jpsm);
+    }
+    else if(nstb==3 || nstb==4)
+    {
+      bn = small_qtslot->FindBin(3.8*2*(nstb-3.5)*(col+.5), -3.8*(row-11.5));
+      if(jpstb>0) small_jptb->SetBinContent(bn,jpstb);
+      if(jpsm>0) small_jpm->SetBinContent(bn,jpsm);
+    }
+  };
 
 
   // draw
@@ -816,36 +860,194 @@ void draw()
 
 
   gStyle->SetOptStat(0);
+  gStyle->SetPalette(3,0);
+
   TCanvas * trg_canv = new TCanvas("trg_canv","trg_canv",2000,2000); 
   large_trg->GetXaxis()->SetRangeUser(-100,100);
   large_trg->GetYaxis()->SetRangeUser(-100,100);
-  large_trg->Draw("acol");
-  small_trg->Draw("acolsame");
-  //largetxt->Draw("textsame");
-  //smalltxt->Draw("textsame");
-  //
-  for(int ii=0; ii<Ndott; ii++) dott[ii]->Draw();
+  large_sel->GetXaxis()->SetRangeUser(-100,100);
+  large_sel->GetYaxis()->SetRangeUser(-100,100);
+  large_sel->Draw("acol");
+  small_sel->Draw("acolsame");
+  large_trg->Draw("aboxsame");
+  small_trg->Draw("aboxsame");
+  //for(int ii=0; ii<Ndott; ii++) dott[ii]->Draw();
   for(int ii=0; ii<Ntrgl; ii++) trgl[ii]->Draw();
-  //vline->Draw();
-  //hline->Draw();
   for(Int_t ii=0; ii<4; ii++) 
   {
-    //svline[ii]->Draw();
-    //shline[ii]->Draw();
     ibox[ii]->Draw();
     obox[ii]->Draw();
     obox2[ii]->Draw();
   };
   for(int ii=0; ii<Nobl; ii++) obl[ii]->Draw();
   for(int ii=0; ii<Netac; ii++) etac[ii]->Draw();
-
   trg_canv->SetGrid(0,0);
   trg_canv->Write();
   trg_canv->Print("trig_pic.png","png");
+
+
+  TCanvas * trg_canv2 = new TCanvas("trg_canv2","trg_canv2",1500,1500); 
+  large_trg->GetXaxis()->SetRangeUser(-100,100);
+  large_trg->GetYaxis()->SetRangeUser(-100,100);
+  large_sel->GetXaxis()->SetRangeUser(-100,100);
+  large_sel->GetYaxis()->SetRangeUser(-100,100);
+  large_sel->Draw("acol");
+  small_sel->Draw("acolsame");
+  //large_trg->Draw("aboxsame");
+  //small_trg->Draw("aboxsame");
+  for(int ii=0; ii<Ndott; ii++) dott[ii]->Draw();
+  for(int ii=0; ii<Ntrgl; ii++) trgl[ii]->Draw();
+  for(Int_t ii=0; ii<4; ii++) 
+  {
+    ibox[ii]->Draw();
+    obox[ii]->Draw();
+    obox2[ii]->Draw();
+  };
+  for(int ii=0; ii<Nobl; ii++) obl[ii]->Draw();
+  //for(int ii=0; ii<Netac; ii++) etac[ii]->Draw();
+  trg_canv2->SetGrid(0,0);
+  trg_canv2->Write();
+  trg_canv2->Print("trig2_pic.png","png");
+
+
+  gStyle->SetPalette(1,0);
+  TCanvas * jptb_canv = new TCanvas("jptb_canv","jptb_canv",2000,2000); 
+  large_jptb->GetXaxis()->SetRangeUser(-100,100);
+  large_jptb->GetYaxis()->SetRangeUser(-100,100);
+  large_jptb->Draw("acol");
+  small_jptb->Draw("acolsame");
+  //for(int ii=0; ii<Ndott; ii++) dott[ii]->Draw();
+  for(int ii=0; ii<Ntrgl; ii++) trgl[ii]->Draw();
+  for(Int_t ii=0; ii<4; ii++) 
+  {
+    ibox[ii]->Draw();
+    obox[ii]->Draw();
+    obox2[ii]->Draw();
+  };
+  for(int ii=0; ii<Nobl; ii++) obl[ii]->Draw();
+  //for(int ii=0; ii<Netac; ii++) etac[ii]->Draw();
+  jptb_canv->SetGrid(0,0);
+  jptb_canv->Write();
+  jptb_canv->Print("jptb_pic.png","png");
+
+
+  TCanvas * jpm_canv = new TCanvas("jpm_canv","jpm_canv",2000,2000); 
+  large_jpm->GetXaxis()->SetRangeUser(-100,100);
+  large_jpm->GetYaxis()->SetRangeUser(-100,100);
+  large_jpm->Draw("acol");
+  small_jpm->Draw("acolsame");
+  //for(int ii=0; ii<Ndott; ii++) dott[ii]->Draw();
+  for(int ii=0; ii<Ntrgl; ii++) trgl[ii]->Draw();
+  for(Int_t ii=0; ii<4; ii++) 
+  {
+    ibox[ii]->Draw();
+    obox[ii]->Draw();
+    obox2[ii]->Draw();
+  };
+  for(int ii=0; ii<Nobl; ii++) obl[ii]->Draw();
+  //for(int ii=0; ii<Netac; ii++) etac[ii]->Draw();
+  jpm_canv->SetGrid(0,0);
+  jpm_canv->Write();
+  jpm_canv->Print("jpm_pic.png","png");
+
+
+  // print qtslot number in fms (was used for determing qtslot <--> jet patch)
+  TCanvas * qtslotnum_canv = new TCanvas("qtslotnum_canv","qtslotnum_canv",4000,1000); 
+  large_qtslot->Draw("textzcol");
+  small_qtslot->Draw("textzcolsame");
+  //largetxt->Draw("textsame");
+  //smalltxt->Draw("textsame");
+  vline->Draw();
+  hline->Draw();
+  for(Int_t ii=0; ii<4; ii++) 
+  {
+    svline[ii]->Draw();
+    shline[ii]->Draw();
+    ibox[ii]->Draw();
+    obox[ii]->Draw();
+  };
+  qtslot_canv->SetGrid(0,0);
+  qtslotnum_canv->Print("qtslot_num.png","png");
 };
 
 
 Double_t XofEta(Double_t eta0)
 {
   return 720 * tan(2*atan2(exp(-1*eta0),1));
+};
+
+
+Int_t JPTB(Int_t nstb0, Int_t chan0, Int_t qtslot0)
+{
+  if(nstb0==1)
+  {
+    if(qtslot0<11)
+    {
+      if(chan0<=289) return 2; // north top
+      else return 3; // north bottom
+    }
+    else return 0; // qtslot 11 not in trigger
+  }
+  else if(nstb0==2)
+  {
+    if(qtslot0<11)
+    {
+      if(chan0<=289) return 4; // south top
+      else return 1; // south bottom
+    }
+    else return 0; // qtslot 11 not in trigger
+  }
+  else if(nstb0==3)
+  {
+    if(chan0<=144) return 2; // north top
+    else return 3; // north bottom
+  }
+  else if(nstb0==4)
+  {
+    if(chan0<=144) return 4; // south top
+    else return 1; // south bottom
+  }
+  return 0;
+};
+
+
+Int_t JPM(Int_t nstb0, Int_t chan0, Int_t qtslot0)
+{
+  // run 15
+  /*
+  if(qtslot0==9 || qtslot0==10)
+  {
+    if(nstb0==1) return 1; // north middle
+    else if (nstb0==2) return 2; // south middle
+  }
+  else if(qtslot0==3 || qtslot0==4)
+  {
+    if(nstb0==3) return 1; // north middle
+    else if(nstb0==4) return 2; // south middle
+  };
+  return 0;
+  */
+
+  // runs 12 and 13 ??
+  if(qtslot0==1 || qtslot0==2)
+  {
+    if(chan0<=144) return 3; // top
+    else return 4; // bottom
+  }
+  else if(qtslot0==3 || qtslot0==4)
+  {
+    if(nstb0==3) return 1; // north middle
+    else if(nstb0==4) return 2; // south middle
+  }
+  else if(qtslot0>=5 && qtslot0<=7)
+  {
+    if(chan0<=289) return 3; // top
+    else return 4; // bottom
+  }
+  else if(qtslot0>=8 && qtslot0<=10)
+  {
+    if(nstb0==1) return 1; // north middle
+    else if (nstb0==2) return 2; // south middle
+  }
+  return 0;
 };
