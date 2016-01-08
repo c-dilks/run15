@@ -304,6 +304,7 @@ void mk_tree(const char * filename="master", Int_t month0=2, Int_t day0=20,
   for(Int_t p=0; p<4; p++)
   {
     rms_canv->cd(p+1);
+    rms_canv->GetPad(p+1)->SetGrid(0,0);
     rms_plot[p]->Draw(draw_style);
     if(unused_gr_i[p]) unused_gr[p]->Draw("P");
     if(masked_gr_i[p]) masked_gr[p]->Draw("P");
@@ -319,6 +320,7 @@ void mk_tree(const char * filename="master", Int_t month0=2, Int_t day0=20,
   for(Int_t p=0; p<4; p++)
   {
     ave_canv->cd(p+1);
+    ave_canv->GetPad(p+1)->SetGrid(0,0);
     ave_plot[p]->Draw(draw_style);
     if(unused_gr_i[p]) unused_gr[p]->Draw("P");
     if(masked_gr_i[p]) masked_gr[p]->Draw("P");
@@ -334,6 +336,7 @@ void mk_tree(const char * filename="master", Int_t month0=2, Int_t day0=20,
   for(Int_t p=0; p<4; p++)
   {
     rdb_canv->cd(p+1);
+    rdb_canv->GetPad(p+1)->SetGrid(0,0);
     rdb_plot[p]->Draw(draw_style);
     if(unused_gr_i[p]) unused_gr[p]->Draw("P");
     if(masked_gr_i[p]) masked_gr[p]->Draw("P");
@@ -349,6 +352,7 @@ void mk_tree(const char * filename="master", Int_t month0=2, Int_t day0=20,
   for(Int_t p=0; p<4; p++)
   {
     set_canv->cd(p+1);
+    set_canv->GetPad(p+1)->SetGrid(0,0);
     set_plot[p]->Draw(draw_style);
     if(unused_gr_i[p]) unused_gr[p]->Draw("P");
     if(masked_gr_i[p]) masked_gr[p]->Draw("P");

@@ -1,6 +1,7 @@
 #!/bin/bash
 
 # obtain new files
+echo "type the operator@daqman password below"
 scp operator@daqman.starp.bnl.gov:/home/operator/fmshv/hvlog_run16/history_* ./
 
 if [ $# -eq 2 ]; then
