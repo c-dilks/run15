@@ -20,7 +20,7 @@ void mk_tree(const char * filename="master", Int_t month0=2, Int_t day0=20,
 
   // make tree after daily log file
   char outfilename[128];
-  sprintf(outfilename,"rootfile.2015.%d.%d.root",month0,day0);
+  sprintf(outfilename,"rootfile.2016.%d.%d.root",month0,day0);
   TFile * outfile = new TFile(outfilename,"RECREATE");
   TTree * tr = new TTree();
   tr->ReadFile(filename,"crate/I:date/C:time/C:slot/I:chan/I:setpoint/I:readback/F");

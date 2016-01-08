@@ -25,6 +25,34 @@ touch monitor.pdf; rm monitor.pdf
 touch summary.pdf; rm summary.pdf
 touch rootfile.root; rm rootfile.root
 
-ln -sv monitor.2015.${month}.${day}.pdf monitor.pdf
-ln -sv summary.2015.${month}.${day}.pdf summary.pdf
-ln -sv rootfile.2015.${month}.${day}.root rootfile.root
+ln -sv monitor.2016.${month}.${day}.pdf monitor.pdf
+ln -sv summary.2016.${month}.${day}.pdf summary.pdf
+ln -sv rootfile.2016.${month}.${day}.root rootfile.root
+
+
+protdir="/afs/rhic/star/doc_protected/www/docp11/spin/$(whoami)/voltage_stability"
+mkdir -p $protdir
+cp monitor.2016.${month}.${day}.pdf $protdir/monitor.pdf
+cp summary.2016.${month}.${day}.pdf $protdir/summary.pdf
+cp rootfile.2016.${month}.${day}.root $protdir/rootfile.root
+
+webpage="$protdir/index.html"
+> $webpage
+
+echo '<html>' >> $webpage
+echo '<head>' >> $webpage
+echo '<title>home</title>' >> $webpage
+echo '<style>' >> $webpage
+echo 'a:link { color:#DDDDDD; }' >> $webpage
+echo 'a:visited { color:#DDDDDD; }' >> $webpage
+echo 'a:hover { color:#EEEEEE; }' >> $webpage
+echo '</style>' >> $webpage
+echo '</head>' >> $webpage
+echo '<body bgcolor=#888888>' >> $webpage
+echo '<h2>Lecroy HV Monitor</h2>' >> $webpage
+echo '<ul>' >> $webpage
+echo '<li><a href=summary.pdf>stability summary</a></li>' >> $webpage
+echo '<li><a href=monitor.pdf>show all channels</a></li>' >> $webpage
+echo '<li><a href=rootfile.root>ROOT file</a></li>' >> $webpage
+echo '</ul></body></html>' >> $webpage
+
