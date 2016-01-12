@@ -1,0 +1,14 @@
+updating git repository
+-----------------------
+cd ~/run15
+git pull
+
+daily update
+------------
+cd ~/run15/voltage_stability
+./update
+type "./update help" for special arguments
+ - use "month" and "day" to specify which day you want to look at
+ - use "timestart" and "timestop" to specify a specific time range, 
+   where the default values are "timestart=0" for the previous midnight
+   and "timestop=0" for the present time

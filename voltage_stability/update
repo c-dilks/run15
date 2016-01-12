@@ -1,47 +1,65 @@
 #!/bin/bash
 
-# obtain new files
-echo "type the operator@daqman password below"
-scp operator@daqman.starp.bnl.gov:/home/operator/fmshv/hvlog_run16/history_* ./
 
 if [ $# -eq 2 ]; then
   month=$1
   day=$2
+  timestart=0
+  timestop=0
+elif [ $# -eq 3 ]; then
+  month=$1
+  day=$2
+  timestart=$3
+  timestop=0
+elif [ $# -eq 4 ]; then
+  month=$1
+  day=$2
+  timestart=$3
+  timestop=$4
 elif [ $# -eq 0 ]; then
   month=$(date +%-m)
   day=$(date +%-d)
+  timestart=0
+  timestop=0
 else
-  echo "Usage: $0 [month] [day]"
+  echo "Usage: $0 [month] [day] [timestart (HHMM)] [timestop (HHMM)]"
   exit
 fi
+
+year=$(date +%-Y)
+
+
+# obtain new files
+echo "type the operator@daqman password below"
+scp operator@daqman.starp.bnl.gov:/home/operator/fmshv/hvlog_run16/history_* ./
 
 
 > master
 cat history_*${month}.${day} >> master
 
-root -b -q 'mk_tree.C("master",'${month}','${day}',0,0)'
+root -b -q 'mk_tree.C("master",'${month}','${day}','${timestart}','${timestop}')'
 
 touch monitor.pdf; rm monitor.pdf
 touch summary.pdf; rm summary.pdf
 touch rootfile.root; rm rootfile.root
 
-ln -sv monitor.2016.${month}.${day}.pdf monitor.pdf
-ln -sv summary.2016.${month}.${day}.pdf summary.pdf
-ln -sv rootfile.2016.${month}.${day}.root rootfile.root
+ln -sv monitor.${year}.${month}.${day}.pdf monitor.pdf
+ln -sv summary.${year}.${month}.${day}.pdf summary.pdf
+ln -sv rootfile.${year}.${month}.${day}.root rootfile.root
 
 
 protdir="/afs/rhic/star/doc_protected/www/docp11/spin/$(whoami)/voltage_stability"
 mkdir -p $protdir
-cp monitor.2016.${month}.${day}.pdf $protdir/monitor.pdf
-cp summary.2016.${month}.${day}.pdf $protdir/summary.pdf
-cp rootfile.2016.${month}.${day}.root $protdir/rootfile.root
+cp monitor.${year}.${month}.${day}.pdf $protdir/monitor.pdf
+cp summary.${year}.${month}.${day}.pdf $protdir/summary.pdf
+cp rootfile.${year}.${month}.${day}.root $protdir/rootfile.root
 
 webpage="$protdir/index.html"
 > $webpage
 
 echo '<html>' >> $webpage
 echo '<head>' >> $webpage
-echo '<title>home</title>' >> $webpage
+echo '<title>Lecroy HV Monitor</title>' >> $webpage
 echo '<style>' >> $webpage
 echo 'a:link { color:#DDDDDD; }' >> $webpage
 echo 'a:visited { color:#DDDDDD; }' >> $webpage
@@ -52,7 +70,12 @@ echo '<body bgcolor=#888888>' >> $webpage
 echo '<h2>Lecroy HV Monitor</h2>' >> $webpage
 echo '<ul>' >> $webpage
 echo '<li><a href=summary.pdf>stability summary</a></li>' >> $webpage
-echo '<li><a href=monitor.pdf>show all channels</a></li>' >> $webpage
+echo '<li><a href=monitor.pdf>show all channels [right click -> save link as]</a></li>' >> $webpage
 echo '<li><a href=rootfile.root>ROOT file</a></li>' >> $webpage
 echo '</ul></body></html>' >> $webpage
+echo '<hr />' >> $webpage
+echo "last updated: $(date +%-c)" >> $webpage
 
+echo ""
+echo "webpage updated:"
+echo "--> http://www.star.bnl.gov/protected/spin/$(whoami)/voltage_stability/index.html"
